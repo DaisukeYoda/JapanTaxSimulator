@@ -292,7 +292,7 @@ max E₀ Σ(t=0 to ∞) Λₜ[(1-τf)(PₜYₜ - WₜNₜ - RₜKₜ) - ψ/2(I�
 4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
 5. プルリクエストを作成
 
-## 📧 連絡先 ludo0218@gmail.com
+## 📧 連絡先
 
 質問やフィードバックがございましたら、お気軽にお問い合わせください。
 
