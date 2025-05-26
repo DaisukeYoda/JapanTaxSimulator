@@ -43,22 +43,23 @@ class ImprovedLinearizedDSGE:
         
         # Define variable ordering
         # State variables (predetermined and exogenous)
-        self.state_vars = ['K', 'B', 'C_lag', 'a', 'g', 'eps_r', 'tau_c_shock', 'tau_l_shock', 'tau_f_shock']
+        self.state_vars = ['K', 'B', 'C_lag', 'R_lag', 'a', 'g', 'eps_r', 'tau_c_shock', 'tau_l_shock', 'tau_f_shock']
         
         # Control variables (jump variables)
         self.control_vars = ['Y', 'C', 'I', 'L', 'w', 'r', 'pi', 'R', 'G', 
                            'T', 'Tc', 'Tl', 'Tk', 'Tf', 'Lambda', 'mc', 'profit']
         
         # All endogenous variables
-        self.endo_vars = self.state_vars[:3] + self.control_vars  # First 3 state vars are endogenous
+        self.endo_vars = self.state_vars[:4] + self.control_vars  # First 4 state vars are endogenous: K, B, C_lag, R_lag
         
         # Forward-looking variables
-        self.forward_vars = ['C', 'pi', 'Lambda', 'r']
+        self.forward_vars = ['C', 'pi', 'Lambda'] # R is also forward-looking due to Taylor rule, but not explicitly listed here in some conventions
         
-        self.n_state = len(self.state_vars)
-        self.n_control = len(self.control_vars)
-        self.n_endo = len(self.endo_vars)
-        self.n_exo = self.n_state - 3  # Exogenous states
+        self.n_state = len(self.state_vars) # Should be 10
+        self.n_control = len(self.control_vars) # Should be 17
+        self.n_endo = len(self.endo_vars) # Should be 4 + 17 = 21
+        self.n_s = 4 # Number of endogenous state variables: K, B, C_lag, R_lag
+        self.n_exo = self.n_state - self.n_s  # Exogenous states: a, g, eps_r, and 3 tax shocks. Should be 6.
         
         # Initialize solution matrices
         self.linear_system = None
@@ -105,8 +106,14 @@ class ImprovedLinearizedDSGE:
         A[eq, idx['C_lag']] = 1.0
         B[eq, idx['C']] = -1.0
         eq += 1
+
+        # 4. Law of motion for R_lag
+        # R_lag_{t+1} = R_t
+        A[eq, idx['R_lag']] = 1.0
+        B[eq, idx['R']] = -1.0
+        eq += 1
         
-        # 4. Euler equation (consumption)
+        # 5. Euler equation (consumption) - (was 4)
         # Lambda_t = beta * E[Lambda_{t+1} * (1+r_{t+1}) / pi_{t+1}]
         A[eq, idx['Lambda']] = -p.beta * (1 + ss.r) / ss.pi
         A[eq, idx['r']] = -p.beta * ss.Lambda / ss.pi
@@ -126,13 +133,13 @@ class ImprovedLinearizedDSGE:
             B[eq, idx['C']] = p.sigma_c / ss.C
         eq += 1
         
-        # 6. Labor supply equation
+        # 7. Labor supply equation - (was 6)
         # w_t*(1-tau_l)*Lambda_t = chi*L_t^(1/sigma_l)
         B[eq, idx['w']] = (1 - p.tau_l) * ss.Lambda
         B[eq, idx['Lambda']] = (1 - p.tau_l) * ss.w
         B[eq, idx['L']] = -p.chi / p.sigma_l * ss.L**(1/p.sigma_l - 1)
         # Add tax shock effect
-        exo_idx = 3 + 2  # tau_l_shock index
+        exo_idx = 4  # tau_l_shock index
         C[eq, exo_idx] = -ss.w * ss.Lambda
         eq += 1
         
@@ -142,10 +149,10 @@ class ImprovedLinearizedDSGE:
         B[eq, idx['K']] = -p.alpha
         B[eq, idx['L']] = -(1 - p.alpha)
         # TFP shock
-        C[eq, 0] = -1.0  # a shock
+        C[eq, 0] = -1.0  # a shock (index for 'a' in C matrix is 0, state_vars index 4)
         eq += 1
         
-        # 8. Labor demand (from firm FOC)
+        # 9. Labor demand (from firm FOC) - (was 8)
         # w_t = mc_t * (1-alpha) * Y_t / L_t
         B[eq, idx['w']] = 1.0
         B[eq, idx['mc']] = -(1 - p.alpha) * ss.Y / ss.L
@@ -160,11 +167,11 @@ class ImprovedLinearizedDSGE:
         B[eq, idx['Y']] = -p.alpha * ss.mc / ss.K * (1 - p.tau_f)
         B[eq, idx['K']] = p.alpha * ss.mc * ss.Y / (ss.K**2) * (1 - p.tau_f)
         # Corporate tax shock
-        exo_idx = 3 + 5  # tau_f_shock index
-        C[eq, exo_idx] = p.alpha * ss.mc * ss.Y / ss.K
+        exo_idx = 5  # tau_f_shock index
+        C[eq, exo_idx] = p.alpha * ss.mc * ss.Y / ss.K # exo_idx = 5 for tau_f_shock (state_vars index 9)
         eq += 1
         
-        # 10. Phillips curve (New Keynesian)
+        # 11. Phillips curve (New Keynesian) - (was 10)
         # pi_t - pi* = beta*E[pi_{t+1} - pi*] + kappa*mc_t
         kappa = (1 - p.theta_p) * (1 - p.beta * p.theta_p) / p.theta_p
         B[eq, idx['pi']] = 1.0
@@ -175,33 +182,34 @@ class ImprovedLinearizedDSGE:
         # 11. Taylor rule
         # R_t = rho_r*R_{t-1} + (1-rho_r)*[R_ss*(pi_t/pi*)^phi_pi * (Y_t/Y_ss)^phi_y] + eps_r_t
         B[eq, idx['R']] = 1.0
+        B[eq, idx['R_lag']] = -p.rho_r # Lagged interest rate term
         B[eq, idx['pi']] = -(1 - p.rho_r) * p.phi_pi
         B[eq, idx['Y']] = -(1 - p.rho_r) * p.phi_y
         # Monetary shock
-        C[eq, 2] = -1.0  # eps_r shock
+        C[eq, 2] = -1.0  # eps_r shock (index for 'eps_r' in C matrix is 2, state_vars index 6)
         eq += 1
         
-        # 12. Government spending rule
+        # 13. Government spending rule - (was 12)
         # G_t = gy_ratio * Y_t * (1 - phi_b*(B_t/Y_t - by_ratio)) + g_shock_t
         B[eq, idx['G']] = 1.0
         B[eq, idx['Y']] = -p.gy_ratio * (1 - p.phi_b * (ss.B / ss.Y - p.by_ratio))
         B[eq, idx['B']] = p.gy_ratio * p.phi_b
         # Government spending shock
-        C[eq, 1] = -ss.G  # g shock
+        C[eq, 1] = -ss.G  # g shock (index for 'g' in C matrix is 1, state_vars index 5)
         eq += 1
         
-        # 13-17. Tax revenue equations
+        # 14-18. Tax revenue equations - (were 13-17)
         # Consumption tax: Tc_t = tau_c * C_t
         B[eq, idx['Tc']] = 1.0
         B[eq, idx['C']] = -p.tau_c
-        C[eq, 3] = -ss.C  # tau_c_shock
+        C[eq, 3] = -ss.C  # tau_c_shock (index for 'tau_c_shock' in C matrix is 3, state_vars index 7)
         eq += 1
         
         # Labor tax: Tl_t = tau_l * w_t * L_t
         B[eq, idx['Tl']] = 1.0
         B[eq, idx['w']] = -p.tau_l * ss.L
         B[eq, idx['L']] = -p.tau_l * ss.w
-        C[eq, 4] = -ss.w * ss.L  # tau_l_shock
+        C[eq, 4] = -ss.w * ss.L  # tau_l_shock (index for 'tau_l_shock' in C matrix is 4, state_vars index 8)
         eq += 1
         
         # Capital tax: Tk_t = tau_k * r_t * K_t
@@ -213,7 +221,7 @@ class ImprovedLinearizedDSGE:
         # Corporate tax: Tf_t = tau_f * profit_t
         B[eq, idx['Tf']] = 1.0
         B[eq, idx['profit']] = -p.tau_f
-        C[eq, 5] = -ss.profit  # tau_f_shock
+        C[eq, 5] = -ss.profit  # tau_f_shock (index for 'tau_f_shock' in C matrix is 5, state_vars index 9)
         eq += 1
         
         # Total tax: T_t = Tc_t + Tl_t + Tk_t + Tf_t
@@ -224,7 +232,7 @@ class ImprovedLinearizedDSGE:
         B[eq, idx['Tf']] = -1.0
         eq += 1
         
-        # 18. Profit equation
+        # 19. Profit equation - (was 18)
         # profit_t = (1 - mc_t) * Y_t
         B[eq, idx['profit']] = 1.0
         B[eq, idx['mc']] = ss.Y
@@ -239,7 +247,7 @@ class ImprovedLinearizedDSGE:
         B[eq, idx['G']] = -1.0
         eq += 1
         
-        # 20. Fisher equation
+        # 21. Fisher equation - (was 20)
         # R_t = (1 + r_t) * pi_{t+1}
         B[eq, idx['R']] = 1.0
         B[eq, idx['r']] = -ss.pi
@@ -289,7 +297,7 @@ class ImprovedLinearizedDSGE:
             print(f"Number of forward-looking variables: {n_forward}")
         
         # Partition the system
-        n_s = 3  # Number of endogenous state variables
+        n_s = 4  # Number of endogenous state variables: K, B, C_lag, R_lag
         
         # Extract relevant blocks
         Z11 = Z[:n_s, :n_s]
@@ -309,12 +317,15 @@ class ImprovedLinearizedDSGE:
         
         # Build full transition matrix including exogenous processes
         Q_full = np.zeros((self.n_state, self.n_state))
-        Q_full[:n_s, :n_s] = Q_endo
+        Q_full[:n_s, :n_s] = Q_endo # Endogenous states part
         
-        # Add exogenous process dynamics
-        Q_full[3, 3] = self.params.rho_a  # TFP persistence
-        Q_full[4, 4] = self.params.rho_g  # Gov spending persistence
-        # Other shocks are i.i.d. (persistence = 0)
+        # Add exogenous process dynamics (indices shifted due to R_lag)
+        # state_vars = ['K', 'B', 'C_lag', 'R_lag', 'a', 'g', 'eps_r', 'tau_c_shock', 'tau_l_shock', 'tau_f_shock']
+        # Exogenous shocks start at index 4 of state_vars
+        Q_full[4, 4] = self.params.rho_a  # TFP persistence ('a' is state_vars[4])
+        Q_full[5, 5] = self.params.rho_g  # Gov spending persistence ('g' is state_vars[5])
+        # Monetary shock 'eps_r' (state_vars[6]) is i.i.d. (persistence = 0, already zero)
+        # Tax shocks (state_vars[7,8,9]) are i.i.d. (persistence = 0, already zero)
         
         # Build full policy matrix
         P_full = np.zeros((self.n_control, self.n_state))
@@ -325,8 +336,8 @@ class ImprovedLinearizedDSGE:
         self.linear_system.Q = Q_full
         
         # Shock loading matrix
-        R = np.eye(self.n_exo)
-        self.linear_system.R = np.vstack([np.zeros((3, self.n_exo)), R])
+        R_shocks = np.eye(self.n_exo) # Shock matrix for the 6 exogenous shocks
+        self.linear_system.R = np.vstack([np.zeros((n_s, self.n_exo)), R_shocks]) # Stack zeros for endogenous states on top
         
         return P_full, Q_full
     
@@ -375,7 +386,8 @@ class ImprovedLinearizedDSGE:
             shock_vector[shock_idx] = shock_size / 100  # Convert to decimal
         
         # Apply initial shock
-        state_path[0, 3:] = shock_vector
+        # Exogenous shocks start at index self.n_s (4) in the state_path vector
+        state_path[0, self.n_s:] = shock_vector
         
         # Simulate forward
         for t in range(periods + 1):
@@ -404,10 +416,19 @@ class ImprovedLinearizedDSGE:
             if var in ss_dict and ss_dict[var] != 0:
                 # For most variables, compute percentage deviation
                 results[var] = results[var] / ss_dict[var] * 100
-            elif var in ['a', 'g', 'eps_r', 'tau_c_shock', 'tau_l_shock', 'tau_f_shock']:
-                # For shocks, keep in levels
+            elif var in ['a', 'g', 'eps_r', 'tau_c_shock', 'tau_l_shock', 'tau_f_shock', 'R_lag']: # R_lag is a state
+                # For shocks and R_lag, keep in levels or specific units
                 if var.endswith('_shock'):
-                    results[var] = results[var] * 100  # Convert to percentage points
+                    results[var] = results[var] * 100  # Convert tax/gov/tfp shocks to percentage points if that's the convention
+                # R_lag is usually in levels (like R). If it needs conversion, handle here.
+                # For now, R_lag will be in same units as R (deviation from SS for R)
+                # If R is already % deviation, R_lag will also be.
+                # The current IRF code converts R to % dev. from SS if ss.R is non-zero.
+                # Let's assume R_lag follows suit.
+                # If ss.R_lag is defined and non-zero, it would be: results[var] / ss_dict[var] * 100
+                # However, R_lag is not in ss_dict directly. It's ss.R.
+                if var == 'R_lag' and 'R' in ss_dict and ss_dict['R'] != 0:
+                     results[var] = results[var] / ss_dict['R'] * 100 # Treat R_lag like R for scaling
         
         df = pd.DataFrame(results)
         df.index.name = 'Period'
@@ -465,10 +486,9 @@ class ImprovedLinearizedDSGE:
             for j, shock_idx in enumerate(range(n_shocks)):
                 # Shock impact
                 shock_impact = np.zeros(self.n_state)
-                if shock_idx < 3:  # Exogenous shocks
-                    shock_impact[3 + shock_idx] = shock_std[shock_idx]
-                else:  # Tax shocks
-                    shock_impact[3 + shock_idx] = shock_std[shock_idx]
+                if shock_idx < self.n_exo: # Ensure shock_idx is within bounds of shock_std
+                    # Exogenous shocks start at index self.n_s (4) in the state_vector
+                    shock_impact[self.n_s + shock_idx] = shock_std[shock_idx]
                 
                 # State response
                 state_response = Q_power @ shock_impact

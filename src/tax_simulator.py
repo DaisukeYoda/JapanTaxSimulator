@@ -248,17 +248,17 @@ class EnhancedTaxSimulator:
         for t in range(periods):
             # Apply shocks
             if t < len(shock_sequence):
-                state_path[t, 3:] = shock_sequence[t]
+                state_path[t, self.linear_model.n_s:] = shock_sequence[t]
             
             # Compute controls
             control_path[t] = self.linear_model.linear_system.P @ state_path[t]
             
             # Update state for next period
             if t < periods - 1:
-                state_path[t + 1, :3] = (self.linear_model.linear_system.Q[:3, :] @ 
-                                        state_path[t])
+                state_path[t + 1, :self.linear_model.n_s] = (self.linear_model.linear_system.Q[:self.linear_model.n_s, :] @
+                                                            state_path[t])
                 if t + 1 < len(shock_sequence):
-                    state_path[t + 1, 3:] = shock_sequence[t + 1]
+                    state_path[t + 1, self.linear_model.n_s:] = shock_sequence[t + 1]
         
         # Convert to levels (not deviations)
         results_dict = {}
