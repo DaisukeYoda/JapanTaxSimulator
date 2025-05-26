@@ -239,25 +239,25 @@ class DSGEModel:
             
             # Assign other variables directly, K and L are handled
             # This manual unpacking is a bit verbose but clear.
-            Y = x[0]
-            C = x[1]
-            I = x[2]
-            # K is now from np.exp(x[self.K_idx])
-            # L is now from np.exp(x[self.L_idx])
-            w = x[5]
-            r = x[6]
-            pi = x[7]
-            R = x[8]
-            G = x[9]
-            B = x[10]
-            T = x[11]
-            Tc = x[12]
-            Tl = x[13]
-            Tk = x[14]
-            Tf = x[15]
-            Lambda = x[16]
-            mc = x[17]
-            profit = x[18]
+            Y = x[self.endogenous_vars.index('Y')]
+            C = x[self.endogenous_vars.index('C')]
+            I = x[self.endogenous_vars.index('I')]
+            # K is already K = np.exp(x[self.K_idx]) on line 237
+            # L is already L = np.exp(x[self.L_idx]) on line 238
+            w = x[self.endogenous_vars.index('w')]
+            r = x[self.endogenous_vars.index('r')]
+            pi = x[self.endogenous_vars.index('pi')]
+            R = x[self.endogenous_vars.index('R')]
+            G = x[self.endogenous_vars.index('G')]
+            B = x[self.endogenous_vars.index('B')]
+            T = x[self.endogenous_vars.index('T')]
+            Tc = x[self.endogenous_vars.index('Tc')]
+            Tl = x[self.endogenous_vars.index('Tl')]
+            Tk = x[self.endogenous_vars.index('Tk')]
+            Tf = x[self.endogenous_vars.index('Tf')]
+            Lambda = x[self.endogenous_vars.index('Lambda')]
+            mc = x[self.endogenous_vars.index('mc')]
+            profit = x[self.endogenous_vars.index('profit')]
 
             # Set steady state values
             C_prev = C  # In steady state
