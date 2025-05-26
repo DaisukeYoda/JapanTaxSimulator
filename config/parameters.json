@@ -1,0 +1,90 @@
+{
+    "model_parameters": {
+        "household": {
+            "beta": 0.99,
+            "comment_beta": "Discount factor - quarterly",
+            "sigma_c": 1.5,
+            "comment_sigma_c": "Intertemporal elasticity of substitution",
+            "sigma_l": 2.0,
+            "comment_sigma_l": "Frisch elasticity of labor supply",
+            "habit": 0.6,
+            "comment_habit": "Habit formation parameter",
+            "chi": 3.0,
+            "comment_chi": "Labor disutility parameter"
+        },
+        "firm": {
+            "alpha": 0.33,
+            "comment_alpha": "Capital share in production",
+            "delta": 0.025,
+            "comment_delta": "Depreciation rate - quarterly",
+            "theta_p": 0.75,
+            "comment_theta_p": "Calvo price stickiness parameter",
+            "epsilon": 6.0,
+            "comment_epsilon": "Elasticity of substitution between goods",
+            "psi": 4.0,
+            "comment_psi": "Capital adjustment cost parameter"
+        },
+        "government": {
+            "gy_ratio": 0.20,
+            "comment_gy_ratio": "Government spending to GDP ratio",
+            "by_ratio": 2.0,
+            "comment_by_ratio": "Government debt to annual GDP ratio",
+            "rho_g": 0.9,
+            "comment_rho_g": "Government spending persistence",
+            "phi_b": 0.1,
+            "comment_phi_b": "Fiscal rule parameter - response to debt"
+        },
+        "monetary_policy": {
+            "phi_pi": 1.5,
+            "comment_phi_pi": "Taylor rule inflation coefficient",
+            "phi_y": 0.125,
+            "comment_phi_y": "Taylor rule output gap coefficient",
+            "rho_r": 0.8,
+            "comment_rho_r": "Interest rate smoothing parameter",
+            "pi_target": 1.005,
+            "comment_pi_target": "Inflation target - quarterly (2% annually)"
+        },
+        "shocks": {
+            "rho_a": 0.95,
+            "comment_rho_a": "TFP shock persistence",
+            "sigma_a": 0.01,
+            "comment_sigma_a": "TFP shock standard deviation",
+            "sigma_g": 0.01,
+            "comment_sigma_g": "Government spending shock std dev",
+            "sigma_r": 0.0025,
+            "comment_sigma_r": "Monetary policy shock std dev"
+        }
+    },
+    "tax_parameters": {
+        "baseline": {
+            "tau_c": 0.10,
+            "comment_tau_c": "Consumption tax rate (10% - current rate)",
+            "tau_l": 0.20,
+            "comment_tau_l": "Labor income tax rate (average)",
+            "tau_k": 0.25,
+            "comment_tau_k": "Capital income tax rate",
+            "tau_f": 0.30,
+            "comment_tau_f": "Corporate tax rate"
+        },
+        "scenarios": {
+            "consumption_tax_increase": {
+                "tau_c": 0.15,
+                "comment": "5 percentage point increase in consumption tax"
+            },
+            "income_tax_reduction": {
+                "tau_l": 0.15,
+                "comment": "5 percentage point reduction in income tax"
+            }
+        }
+    },
+    "calibration_targets": {
+        "cy_ratio": 0.60,
+        "comment_cy_ratio": "Consumption to GDP ratio",
+        "iy_ratio": 0.20,
+        "comment_iy_ratio": "Investment to GDP ratio",
+        "ky_ratio": 10.0,
+        "comment_ky_ratio": "Capital to annual GDP ratio",
+        "hours_steady": 0.33,
+        "comment_hours_steady": "Steady state hours worked"
+    }
+}
