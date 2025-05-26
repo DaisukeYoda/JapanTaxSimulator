@@ -131,6 +131,8 @@ class DSGEModel:
             'Y', 'C', 'I', 'K', 'L', 'w', 'r', 'pi', 'R', 'G', 'B',
             'T', 'Tc', 'Tl', 'Tk', 'Tf', 'Lambda', 'mc', 'profit'
         ]
+        self.K_idx = self.endogenous_vars.index('K')
+        self.L_idx = self.endogenous_vars.index('L')
         self.exogenous_vars = ['a', 'g', 'eps_r']  # TFP, gov spending, monetary shock
         
     def household_foc(self, C, C_prev, L, Lambda, w, r, pi_next, params):
@@ -228,9 +230,35 @@ class DSGEModel:
         
         # Define the steady state system of equations
         def steady_state_system(x):
-            # Unpack variables
-            Y, C, I, K, L, w, r, pi, R, G, B, T, Tc, Tl, Tk, Tf, Lambda, mc, profit = x
+            # Unpack variables from x
+            # Y, C, I, K_val, L_val, w, r, pi, R, G, B, T, Tc, Tl, Tk, Tf, Lambda, mc, profit = x
             
+            # Exponentiate K and L
+            K = np.exp(x[self.K_idx])
+            L = np.exp(x[self.L_idx])
+            
+            # Assign other variables directly, K and L are handled
+            # This manual unpacking is a bit verbose but clear.
+            Y = x[0]
+            C = x[1]
+            I = x[2]
+            # K is now from np.exp(x[self.K_idx])
+            # L is now from np.exp(x[self.L_idx])
+            w = x[5]
+            r = x[6]
+            pi = x[7]
+            R = x[8]
+            G = x[9]
+            B = x[10]
+            T = x[11]
+            Tc = x[12]
+            Tl = x[13]
+            Tk = x[14]
+            Tf = x[15]
+            Lambda = x[16]
+            mc = x[17]
+            profit = x[18]
+
             # Set steady state values
             C_prev = C  # In steady state
             pi_next = pi
@@ -266,7 +294,7 @@ class DSGEModel:
                 production, labor_demand, capital_demand, pricing,
                 budget, fiscal_rule, *tax_eqs,
                 taylor,
-                goods_market, capital_acc, investment,
+                goods_market, investment,
                 profit_eq, real_rate
             ]
             
@@ -275,28 +303,34 @@ class DSGEModel:
         # Initial guess
         if initial_guess is None:
             x0 = np.array([
-                1.0,   # Y
-                0.6,   # C
-                0.2,   # I
-                10.0,  # K
-                0.33,  # L
-                2.0,   # w
-                0.04,  # r
-                1.005, # pi
-                1.045, # R
-                0.2,   # G
-                2.0,   # B
-                0.2,   # T
-                0.06,  # Tc
-                0.08,  # Tl
-                0.03,  # Tk
-                0.03,  # Tf
-                1.0,   # Lambda
-                0.833, # mc
-                0.1    # profit
+                1.0,           # Y
+                0.6,           # C
+                0.2,           # I
+                np.log(10.0),  # K (log-transformed)
+                np.log(0.33),  # L (log-transformed)
+                2.0,           # w
+                0.04,          # r
+                1.005,         # pi
+                1.045,         # R
+                0.2,           # G
+                2.0,           # B
+                0.2,           # T
+                0.06,          # Tc
+                0.08,          # Tl
+                0.03,          # Tk
+                0.03,          # Tf
+                1.0,           # Lambda
+                0.833,         # mc
+                0.1            # profit
             ])
         else:
-            x0 = np.array([initial_guess.get(var, 1.0) for var in self.endogenous_vars])
+            x0_list = []
+            for var_name in self.endogenous_vars:
+                val = initial_guess.get(var_name, 1.0)
+                if var_name == 'K' or var_name == 'L':
+                    val = np.log(val)
+                x0_list.append(val)
+            x0 = np.array(x0_list)
         
         # Solve the system
         solution = optimize.fsolve(steady_state_system, x0, full_output=True)
@@ -308,8 +342,11 @@ class DSGEModel:
         ss_values = solution[0]
         steady_state = SteadyState()
         
-        for i, var in enumerate(self.endogenous_vars):
-            setattr(steady_state, var, ss_values[i])
+        for i, var_name in enumerate(self.endogenous_vars):
+            val_to_set = ss_values[i]
+            if var_name == 'K' or var_name == 'L':
+                val_to_set = np.exp(val_to_set)
+            setattr(steady_state, var_name, val_to_set)
         
         self.steady_state = steady_state
         return steady_state
