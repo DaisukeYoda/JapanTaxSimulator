@@ -44,6 +44,22 @@
             "pi_target": 1.005,
             "comment_pi_target": "Inflation target - quarterly (2% annually)"
         },
+        "international": {
+            "alpha_m": 0.15,
+            "comment_alpha_m": "Import share in domestic absorption (C+I+G)",
+            "eta_im": 1.0,
+            "comment_eta_im": "Price elasticity of imports",
+            "alpha_x": 0.15,
+            "comment_alpha_x": "Export scale parameter (calibrated for EX/Y_ss=0.15 if Y_ss=Y*_ss=q_ss=1)",
+            "phi_ex": 1.5,
+            "comment_phi_ex": "Elasticity of exports to foreign income Y*",
+            "eta_ex": 1.0,
+            "comment_eta_ex": "Price elasticity of exports (elasticity wrt real exchange rate q)",
+            "ystar_ss": 1.0,
+            "comment_ystar_ss": "Steady-state foreign output Y*",
+            "rho_ystar": 0.90,
+            "comment_rho_ystar": "Persistence of foreign output Y* process (AR1)"
+        },
         "shocks": {
             "rho_a": 0.95,
             "comment_rho_a": "TFP shock persistence",
@@ -52,7 +68,9 @@
             "sigma_g": 0.01,
             "comment_sigma_g": "Government spending shock std dev",
             "sigma_r": 0.0025,
-            "comment_sigma_r": "Monetary policy shock std dev"
+            "comment_sigma_r": "Monetary policy shock std dev",
+            "sigma_ystar": 0.01,
+            "comment_sigma_ystar": "Standard deviation of foreign output Y* shocks"
         }
     },
     "tax_parameters": {
