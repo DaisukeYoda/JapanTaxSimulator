@@ -316,5 +316,3 @@ class DSGEModel:
 def load_model(config_path: str) -> DSGEModel:
     params = ModelParameters.from_json(config_path)
     return DSGEModel(params)
-
-[end of src/dsge_model.py]
