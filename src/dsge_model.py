@@ -27,7 +27,7 @@ class ModelParameters:
     epsilon: float = 6.0; psi: float = 4.0
     # Government parameters
     gy_ratio: float = 0.20; by_ratio: float = 2.0 # Target Debt-to-Quarterly-GDP
-    rho_g: float = 0.9; phi_b: float = 0.1; tau_l_ss: float = 0.20
+    rho_g: float = 0.9; phi_b: float = 0.1; tau_l_ss: float = 0.20; tau_l: float = 0.20
     # Monetary policy parameters
     phi_pi: float = 1.5; phi_y: float = 0.125; rho_r: float = 0.8
     pi_target: float = 1.005 # Gross quarterly inflation target
@@ -50,6 +50,7 @@ class ModelParameters:
         with open(filepath, 'r', encoding='utf-8') as f: data = json.load(f)
         params = cls()
         params.tau_l_ss = data.get('tax_parameters', {}).get('baseline', {}).get('tau_l', params.tau_l_ss)
+        params.tau_l = params.tau_l_ss  # Set tau_l to match tau_l_ss initially
         param_sections_data = data['model_parameters']
         for section_key in param_sections_data: 
             for k, v in param_sections_data[section_key].items():
@@ -57,6 +58,9 @@ class ModelParameters:
         tax_base = data.get('tax_parameters', {}).get('baseline', {})
         for k, v in tax_base.items():
             if not k.startswith('comment_') and hasattr(params, k): setattr(params, k, v)
+        # Ensure tau_l is set from JSON if present, otherwise use tau_l_ss
+        if 'tau_l' in tax_base:
+            params.tau_l = tax_base['tau_l']
         calib_targets = data.get('calibration_targets', {})
         for k, v in calib_targets.items():
             if not k.startswith('comment_') and hasattr(params, k): setattr(params, k, v)
