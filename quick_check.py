@@ -39,7 +39,7 @@ try:
     print("✓ Successfully computed steady state")
     print(f"  GDP: {ss.Y:.3f}")
     print(f"  Consumption: {ss.C:.3f}")
-    print(f"  Tax/GDP ratio: {ss.T/ss.Y:.1%}")
+    print(f"  Tax/GDP ratio: {ss.T_total_revenue/ss.Y:.1%}")
 except Exception as e:
     print(f"✗ Failed to compute steady state: {e}")
     import traceback
