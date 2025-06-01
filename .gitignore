@@ -23,3 +23,6 @@ Thumbs.db
 
 # Development tools and testing artifacts
 dev_tools/
+
+# Claude Code documentation (personal/local use)
+CLAUDE.md
