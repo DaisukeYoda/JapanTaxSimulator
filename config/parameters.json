@@ -15,7 +15,7 @@
         "firm": {
             "alpha": 0.33,
             "comment_alpha": "Capital share in production",
-            "delta": 0.025,
+            "delta": 0.027,
             "comment_delta": "Depreciation rate - quarterly",
             "theta_p": 0.75,
             "comment_theta_p": "Calvo price stickiness parameter",
@@ -100,7 +100,7 @@
         "comment_cy_ratio": "Consumption to GDP ratio",
         "iy_ratio": 0.20,
         "comment_iy_ratio": "Investment to GDP ratio",
-        "ky_ratio": 10.0,
+        "ky_ratio": 1.85,
         "comment_ky_ratio": "Capital to annual GDP ratio",
         "hours_steady": 0.33,
         "comment_hours_steady": "Steady state hours worked"
