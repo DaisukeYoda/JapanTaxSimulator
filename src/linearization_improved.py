@@ -12,7 +12,11 @@ from scipy import linalg
 from typing import Dict, List, Tuple, Optional, Union
 import matplotlib.pyplot as plt
 import seaborn as sns
+import logging
 from dataclasses import dataclass
+
+# Set up logger for this module
+logger = logging.getLogger(__name__)
 
 try:
     from .dsge_model import DSGEModel, SteadyState, ModelParameters
@@ -333,12 +337,13 @@ class ImprovedLinearizedDSGE:
                     non_zero_rows = np.where(np.abs(eps_a_col) > 1e-10)[0]
                     
                     # If eps_a affects K but not A_tfp, fix the mapping
+                    # Note: k_idx and a_tfp_idx bounds checks ensure they are valid row indices for C matrix
                     if (k_idx in non_zero_rows and 
                         a_tfp_idx not in non_zero_rows and 
-                        k_idx < len(eps_a_col) and 
-                        a_tfp_idx < len(eps_a_col)):
+                        k_idx < C.shape[0] and 
+                        a_tfp_idx < C.shape[0]):
                         
-                        print(f"Fixing TFP shock mapping: moving eps_a from row {k_idx} (K) to row {a_tfp_idx} (A_tfp)")
+                        logger.info(f"Fixing TFP shock mapping: moving eps_a from row {k_idx} (K) to row {a_tfp_idx} (A_tfp)")
                         
                         # Move the shock coefficient
                         shock_coeff = C[k_idx, eps_a_idx]
@@ -385,13 +390,15 @@ class ImprovedLinearizedDSGE:
                 print(f"A matrix is still rank deficient ({A_rank}/{A.shape[0]})")
                 
                 # Apply economically meaningful regularization
-                # Use a smaller regularization parameter to avoid instability
+                # Use a smaller regularization parameter to avoid numerical instability
+                # while still improving rank. The 1e-10 scaling is empirically chosen
+                # to be large enough to improve rank but small enough to avoid explosive dynamics
                 existing_nonzero = A[np.abs(A) > 1e-12]
                 if len(existing_nonzero) > 0:
                     typical_scale = np.median(np.abs(existing_nonzero))
-                    reg_param = typical_scale * 1e-10  # Smaller to maintain stability
+                    reg_param = typical_scale * 1e-10  # Conservative regularization to maintain stability
                 else:
-                    reg_param = 1e-10
+                    reg_param = 1e-10  # Fallback minimal regularization
                 
                 print(f"Applying regularization with parameter: {reg_param:.2e}")
                 A_reg = A + reg_param * np.eye(A.shape[0])

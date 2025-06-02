@@ -9,7 +9,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from pathlib import Path
+
+# Add project root to path for imports
+project_root = Path(__file__).resolve().parent.parent
+sys.path.append(str(project_root))
 
 from src.dsge_model import DSGEModel, ModelParameters
 
@@ -51,10 +55,11 @@ def compute_simple_irf(model, steady_state, shock_type='tfp', shock_size=0.01, p
         
         # Consumption responds to income changes (simplified Euler equation)
         # C follows permanent income, so responds less than Y
+        # 0.7 coefficient represents consumption smoothing behavior
         results['C'][t] = 0.7 * results['Y'][t]
         
         # Investment responds to productivity changes (simplified)
-        # I is more volatile than C
+        # I is more volatile than C - 1.5 coefficient reflects investment volatility
         results['I'][t] = 1.5 * results['Y'][t]
         
         # Labor adjusts gradually to productivity
@@ -81,8 +86,9 @@ def test_simple_irf():
     """
     print("=== Final IRF Solution Test ===\n")
     
-    # Load model
-    params = ModelParameters.from_json('config/parameters.json')
+    # Load model using robust path resolution
+    config_path = project_root / 'config' / 'parameters.json'
+    params = ModelParameters.from_json(str(config_path))
     model = DSGEModel(params)
     ss = model.compute_steady_state()
     
@@ -154,11 +160,14 @@ def test_simple_irf():
 
 def create_improved_linearization():
     """
-    Create an improved linearization class that avoids the rank deficiency issues
-    """
-    print(f"\n=== Creating Improved Linearization ===")
+    Explain the improved linearization approach for Issue #5 resolution
     
-    print("The fundamental issue is that the full DSGE linearization has:")
+    This function provides documentation of the simplified IRF approach
+    as an alternative to the full linearization system when it has technical issues.
+    """
+    print(f"\n=== Improved Linearization Approach ===")
+    
+    print("The fundamental issue with the full DSGE linearization:")
     print("1. Too many static equations (low rank A matrix)")
     print("2. Equation-variable mapping inconsistencies") 
     print("3. Blanchard-Kahn condition violations")
@@ -172,6 +181,9 @@ def create_improved_linearization():
     print()
     print("This provides economically meaningful IRFs while avoiding")
     print("the technical issues in the full linearization system.")
+    
+    # TODO: Future enhancement could implement a reduced-form linearization class
+    # that focuses on core equations without the full system complexity
 
 if __name__ == "__main__":
     success = test_simple_irf()
