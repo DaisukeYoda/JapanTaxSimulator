@@ -96,8 +96,8 @@ def analyze_forward_terms():
                 if base_var in ss_dict:
                     substitutions[symbol] = ss_dict[base_var]
                 else:
-                    print(f"  Warning: No steady state value for {base_var}")
-                    substitutions[symbol] = 1.0
+                    print(f"  Warning: No steady state value for {base_var}, using default=1.0")
+                    substitutions[symbol] = 1.0  # Safe default for linearization analysis
         
         print(f"Substitutions: {len(substitutions)} symbols")
         

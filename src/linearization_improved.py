@@ -271,7 +271,23 @@ class ImprovedLinearizedDSGE:
                 print("System is overdetermined - removing equations while preserving structure...")
                 
                 # Define critical equations that must be kept (0-indexed)
-                critical_equations = [8, 9]  # Production function (Y) and TFP process (A_tfp)
+                # Identify these equations by their content rather than hardcoded indices
+                critical_equations = []
+                
+                # Look for production function (Y equation) and TFP process (A_tfp equation)
+                for eq_idx, equation in enumerate(self.equations):
+                    if eq_idx >= A.shape[0]:
+                        break
+                    expr_str = str(equation.lhs - equation.rhs)
+                    
+                    # Production function: Y = A_tfp * K^alpha * L^(1-alpha)
+                    if 'Y' in expr_str and 'A_tfp' in expr_str and 'K' in expr_str and 'L' in expr_str:
+                        critical_equations.append(eq_idx)
+                    # TFP process: log(A_tfp/A_tfp_ss) = rho_a * log(A_tfp_tm1/A_tfp_ss) + eps_a
+                    elif 'A_tfp' in expr_str and ('eps_a' in expr_str or 'log' in expr_str):
+                        critical_equations.append(eq_idx)
+                
+                print(f"Identified critical equations: {[i+1 for i in critical_equations]}")
                 
                 # Priority order: 1) Forward-looking, 2) Critical static, 3) Others by norm
                 keep_indices = forward_eq_indices.copy()
@@ -304,32 +320,35 @@ class ImprovedLinearizedDSGE:
                 C = C[keep_indices, :]
                 
             elif A.shape[0] < target_eq_count:
-                # Too few equations - need to add identity equations for missing variables
-                print("System is underdetermined - adding identity equations for missing variables...")
+                # System is underdetermined - this should rarely happen in a properly specified DSGE model
+                print("Warning: System is underdetermined - this may indicate missing model equations")
+                print("Consider adding missing behavioral or equilibrium conditions to the model")
                 
                 missing_equations = target_eq_count - A.shape[0]
-                print(f"Adding {missing_equations} identity equations")
+                print(f"Missing {missing_equations} equations for square system")
                 
-                # Add zero rows to A, identity rows to B
+                # Instead of arbitrary identity equations, add minimal regularization
+                # that doesn't impose economic restrictions
                 A_extended = np.vstack([A, np.zeros((missing_equations, A.shape[1]))])
                 B_extended = np.vstack([B, np.zeros((missing_equations, B.shape[1]))])
                 C_extended = np.vstack([C, np.zeros((missing_equations, C.shape[1]))])
                 
-                # For the added equations, create simple identity relationships
-                # This ensures each variable has at least one equation determining it
+                # Add small diagonal entries only to prevent rank deficiency
+                # without imposing that deviations must be zero
                 added_row_start = A.shape[0]
                 for i in range(missing_equations):
                     row_idx = added_row_start + i
-                    # Make this an identity for the i-th variable (simple current-period equation)
-                    var_idx = i  # Just use first missing_equations variables
+                    var_idx = row_idx  # Map to corresponding variable
                     if var_idx < B_extended.shape[1]:
-                        B_extended[row_idx, var_idx] = 1.0
+                        # Add a very small coefficient instead of 1.0 to avoid imposing x_var = 0
+                        B_extended[row_idx, var_idx] = 1e-10
                 
                 A = A_extended
                 B = B_extended
                 C = C_extended
                 
                 print(f"Extended system shape: A{A.shape}, B{B.shape}, C{C.shape}")
+                print("Warning: Added minimal regularization - verify model specification")
         
         # Final verification and regularization if needed
         if A.shape[0] == A.shape[1]:

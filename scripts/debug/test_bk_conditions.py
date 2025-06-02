@@ -93,30 +93,57 @@ def test_blanchard_kahn():
             # Final control response
             control_response[:, T-1] = P @ state_response[:, T-1]
             
-            # Check key variables
-            if 'Y' in linearizer.state_vars:
-                y_idx = linearizer.state_vars.index('Y')
-                y_response = state_response[y_idx, :]
+            # Check key variables (handle both state and control variables)
+            def get_variable_response(var_name, t):
+                """Get response for a variable, checking both state and control categories"""
+                if var_name in linearizer.state_vars:
+                    var_idx = linearizer.state_vars.index(var_name)
+                    return state_response[var_idx, t]
+                elif var_name in linearizer.control_vars:
+                    var_idx = linearizer.control_vars.index(var_name)
+                    return control_response[var_idx, t]
+                else:
+                    return None
+            
+            # Check GDP response
+            y_responses = []
+            for t in range(T):
+                y_resp = get_variable_response('Y', t)
+                if y_resp is not None:
+                    y_responses.append(y_resp)
+            
+            if y_responses:
+                y_responses = np.array(y_responses)
                 print(f"GDP response to TFP shock:")
-                print(f"  Impact (t=0): {y_response[0]:.6f}")
-                print(f"  Peak: {np.max(y_response):.6f} at period {np.argmax(y_response)}")
+                print(f"  Impact (t=0): {y_responses[0]:.6f}")
+                print(f"  Peak: {np.max(np.abs(y_responses)):.6f} at period {np.argmax(np.abs(y_responses))}")
                 
-                if np.abs(y_response[0]) > 1e-10:
+                if np.abs(y_responses[0]) > 1e-10:
                     print("✓ GDP responds to TFP shock")
                 else:
                     print("✗ GDP response is zero")
+            else:
+                print("✗ Could not find Y variable in state or control vars")
             
-            if 'C' in linearizer.state_vars:
-                c_idx = linearizer.state_vars.index('C')
-                c_response = state_response[c_idx, :]
+            # Check Consumption response
+            c_responses = []
+            for t in range(T):
+                c_resp = get_variable_response('C', t)
+                if c_resp is not None:
+                    c_responses.append(c_resp)
+            
+            if c_responses:
+                c_responses = np.array(c_responses)
                 print(f"Consumption response to TFP shock:")
-                print(f"  Impact (t=0): {c_response[0]:.6f}")
-                print(f"  Peak: {np.max(c_response):.6f} at period {np.argmax(c_response)}")
+                print(f"  Impact (t=0): {c_responses[0]:.6f}")
+                print(f"  Peak: {np.max(np.abs(c_responses)):.6f} at period {np.argmax(np.abs(c_responses))}")
                 
-                if np.abs(c_response[0]) > 1e-10:
+                if np.abs(c_responses[0]) > 1e-10:
                     print("✓ Consumption responds to TFP shock")
                 else:
                     print("✗ Consumption response is zero")
+            else:
+                print("✗ Could not find C variable in state or control vars")
                     
         else:
             print("✗ TFP shock (eps_a) not found in exogenous variables")
