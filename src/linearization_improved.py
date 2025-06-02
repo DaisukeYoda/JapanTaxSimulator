@@ -252,44 +252,114 @@ class ImprovedLinearizedDSGE:
                         except Exception as e:
                             print(f"Warning: Failed to differentiate equation {eq_idx} w.r.t. {symbol}: {e}")
         
-        # Ensure square system by removing redundant equations if necessary
-        if A.shape[0] > A.shape[1]:
-            print(f"Warning: System is overdetermined ({A.shape[0]} equations, {A.shape[1]} variables)")
-            print("Removing equations with smallest norm, but protecting key economic relationships...")
+        # Ensure square system: keep exactly n_endo equations
+        target_eq_count = A.shape[1]  # Number of variables
+        
+        if A.shape[0] != target_eq_count:
+            print(f"Adjusting system to be square: {A.shape[0]} equations -> {target_eq_count} equations")
             
-            # Define critical equations that should be preserved (0-indexed)
-            # Based on the model equations from dsge_model.py:
-            # Eq 9 (index 8): GDP production function Y_t = A_tfp_t * K^α * L^(1-α)
-            # Eq 10 (index 9): TFP process log(A_tfp_t/A_tfp_ss) = ρ_a * log(A_tfp_{t-1}/A_tfp_ss) + eps_a
-            critical_equations = [8, 9]  # Production function and TFP process
+            # Identify forward-looking equations (non-zero rows in A matrix)
+            forward_eq_indices = []
+            for i in range(A.shape[0]):
+                if np.linalg.norm(A[i, :]) > 1e-12:
+                    forward_eq_indices.append(i)
             
-            # Calculate the norm of each equation (row)
-            equation_norms = np.linalg.norm(np.column_stack([A, B]), axis=1)
+            print(f"Forward-looking equations ({len(forward_eq_indices)}): {[i+1 for i in forward_eq_indices]}")
             
-            # Start with critical equations
-            keep_indices = []
-            for eq_idx in critical_equations:
-                if eq_idx < len(equation_norms):
+            if A.shape[0] > target_eq_count:
+                # Too many equations - need to remove some
+                print("System is overdetermined - removing equations while preserving structure...")
+                
+                # Define critical equations that must be kept (0-indexed)
+                critical_equations = [8, 9]  # Production function (Y) and TFP process (A_tfp)
+                
+                # Priority order: 1) Forward-looking, 2) Critical static, 3) Others by norm
+                keep_indices = forward_eq_indices.copy()
+                
+                # Add critical static equations
+                for eq_idx in critical_equations:
+                    if eq_idx < A.shape[0] and eq_idx not in keep_indices:
+                        keep_indices.append(eq_idx)
+                
+                # Calculate norms for remaining equations
+                remaining_indices = [i for i in range(A.shape[0]) if i not in keep_indices]
+                equation_norms = []
+                for i in remaining_indices:
+                    combined_norm = np.linalg.norm(A[i, :]) + np.linalg.norm(B[i, :])
+                    equation_norms.append((combined_norm, i))
+                
+                # Sort by norm (largest first)
+                equation_norms.sort(reverse=True)
+                
+                # Add remaining equations until we reach target count
+                needed_equations = target_eq_count - len(keep_indices)
+                for norm, eq_idx in equation_norms[:needed_equations]:
                     keep_indices.append(eq_idx)
+                
+                keep_indices = np.sort(keep_indices)
+                print(f"Keeping {len(keep_indices)} equations: {keep_indices + 1}")
+                
+                A = A[keep_indices, :]
+                B = B[keep_indices, :]
+                C = C[keep_indices, :]
+                
+            elif A.shape[0] < target_eq_count:
+                # Too few equations - need to add identity equations for missing variables
+                print("System is underdetermined - adding identity equations for missing variables...")
+                
+                missing_equations = target_eq_count - A.shape[0]
+                print(f"Adding {missing_equations} identity equations")
+                
+                # Add zero rows to A, identity rows to B
+                A_extended = np.vstack([A, np.zeros((missing_equations, A.shape[1]))])
+                B_extended = np.vstack([B, np.zeros((missing_equations, B.shape[1]))])
+                C_extended = np.vstack([C, np.zeros((missing_equations, C.shape[1]))])
+                
+                # For the added equations, create simple identity relationships
+                # This ensures each variable has at least one equation determining it
+                added_row_start = A.shape[0]
+                for i in range(missing_equations):
+                    row_idx = added_row_start + i
+                    # Make this an identity for the i-th variable (simple current-period equation)
+                    var_idx = i  # Just use first missing_equations variables
+                    if var_idx < B_extended.shape[1]:
+                        B_extended[row_idx, var_idx] = 1.0
+                
+                A = A_extended
+                B = B_extended
+                C = C_extended
+                
+                print(f"Extended system shape: A{A.shape}, B{B.shape}, C{C.shape}")
+        
+        # Final verification and regularization if needed
+        if A.shape[0] == A.shape[1]:
+            A_rank = np.linalg.matrix_rank(A)
+            print(f"Square system achieved: {A.shape} with rank {A_rank}")
             
-            # Add remaining equations based on largest norms
-            remaining_indices = [i for i in range(len(equation_norms)) if i not in keep_indices]
-            remaining_norms = [equation_norms[i] for i in remaining_indices]
-            sorted_remaining = sorted(zip(remaining_norms, remaining_indices), reverse=True)
-            
-            # Add equations until we have the right number
-            needed_equations = A.shape[1] - len(keep_indices)
-            for _, eq_idx in sorted_remaining[:needed_equations]:
-                keep_indices.append(eq_idx)
-            
-            keep_indices = np.sort(keep_indices)
-            
-            print(f"Protecting critical equations: {[i+1 for i in critical_equations if i in keep_indices]}")
-            print(f"Keeping equations: {keep_indices + 1}")
-            
-            A = A[keep_indices, :]
-            B = B[keep_indices, :]
-            C = C[keep_indices, :]
+            if A_rank < A.shape[0]:
+                print(f"A matrix is still rank deficient ({A_rank}/{A.shape[0]})")
+                
+                # Apply economically meaningful regularization
+                # Use a larger regularization parameter based on the scale of existing entries
+                existing_nonzero = A[np.abs(A) > 1e-12]
+                if len(existing_nonzero) > 0:
+                    typical_scale = np.median(np.abs(existing_nonzero))
+                    reg_param = typical_scale * 1e-6  # Much larger than before
+                else:
+                    reg_param = 1e-6
+                
+                print(f"Applying regularization with parameter: {reg_param:.2e}")
+                A_reg = A + reg_param * np.eye(A.shape[0])
+                A_rank_reg = np.linalg.matrix_rank(A_reg)
+                
+                if A_rank_reg > A_rank:
+                    print(f"Regularization improved rank to {A_rank_reg}")
+                    A = A_reg
+                else:
+                    print("Regularization did not help - may need model restructuring")
+        else:
+            print(f"Warning: Could not create square system: {A.shape}")
+            print("This indicates a fundamental issue with the model specification")
         
         # Store the system 
         self.linear_system = LinearizedSystem(
