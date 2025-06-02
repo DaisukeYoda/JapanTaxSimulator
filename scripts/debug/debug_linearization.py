@@ -4,20 +4,24 @@ Debug script for linearization
 """
 
 import numpy as np
-import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../src'))
-
-from dsge_model import load_model
-from linearization_improved import ImprovedLinearizedDSGE
 import sympy
+import sys
+
+# Add project root to path when running as script
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+from src.dsge_model import load_model
+from src.linearization_improved import ImprovedLinearizedDSGE
 
 def debug_linearization():
     """Debug the symbolic linearization"""
     print("Debugging symbolic linearization...")
     
     # Load model
-    model = load_model('../../config/parameters.json')
+    config_path = os.path.join(os.path.dirname(__file__), '../..', 'config', 'parameters.json')
+    model = load_model(config_path)
     steady_state = model.compute_steady_state()
     
     # Create linearization

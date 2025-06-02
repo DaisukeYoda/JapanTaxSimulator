@@ -3,20 +3,18 @@
 Issue #5 最終テスト - 修正されたシステムの確認
 """
 
-import sys
 import os
-sys.path.append('.')
+import numpy as np
+import matplotlib.pyplot as plt
+from src.dsge_model import DSGEModel, ModelParameters
+from src.linearization_improved import ImprovedLinearizedDSGE
 
 try:
-    import numpy as np
-    import matplotlib.pyplot as plt
-    from src.dsge_model import DSGEModel, ModelParameters
-    from src.linearization_improved import ImprovedLinearizedDSGE
     
     print("=== Issue #5 最終確認テスト ===\n")
     
     # モデル構築
-    params = ModelParameters.from_json('../../config/parameters.json')
+    params = ModelParameters.from_json(os.path.join(os.path.dirname(__file__), '../..', 'config', 'parameters.json'))
     model = DSGEModel(params)
     ss = model.compute_steady_state()
     

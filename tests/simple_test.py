@@ -1,10 +1,7 @@
 """Simple steady state convergence test"""
 
 import numpy as np
-import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
 from src.dsge_model import DSGEModel, ModelParameters, SteadyState
 from scipy.optimize import fsolve
 

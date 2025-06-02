@@ -4,10 +4,7 @@ Enhanced Impulse Response Function test using actual DSGE model dynamics
 """
 
 import numpy as np
-import sys
 import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 from src.dsge_model import DSGEModel, ModelParameters
 from src.linearization_improved import ImprovedLinearizedDSGE
 from scipy.linalg import qz
@@ -22,7 +19,7 @@ def enhanced_irf_test():
     
     # Initialize and solve model
     print("\n1. Setting up DSGE model...")
-    model = DSGEModel(ModelParameters.from_json('../../config/parameters.json'))
+    model = DSGEModel(ModelParameters.from_json(os.path.join(os.path.dirname(__file__), '../..', 'config', 'parameters.json')))
     ss = model.compute_steady_state()
     lin_model = ImprovedLinearizedDSGE(model, ss)
     system = lin_model.build_system_matrices()
@@ -258,4 +255,5 @@ def main():
     return 0 if success else 1
 
 if __name__ == "__main__":
+    import sys
     sys.exit(main())

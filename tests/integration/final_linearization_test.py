@@ -6,12 +6,9 @@ Final comprehensive test of the fixed linearization
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../src'))
-
-from dsge_model import load_model
-from linearization_improved import ImprovedLinearizedDSGE
+from src.dsge_model import load_model
+from src.linearization_improved import ImprovedLinearizedDSGE
 
 def final_test():
     """Final comprehensive test of the linearization fix"""
@@ -19,7 +16,7 @@ def final_test():
     print("Testing the improved symbolic linearization approach...\n")
     
     # Load model
-    model = load_model('../../config/parameters.json')
+    model = load_model(os.path.join(os.path.dirname(__file__), '../..', 'config', 'parameters.json'))
     steady_state = model.compute_steady_state()
     
     # Create improved linearization

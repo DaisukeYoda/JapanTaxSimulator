@@ -4,19 +4,17 @@ Test script for improved linearization
 """
 
 import numpy as np
-import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
-
-from dsge_model import load_model
-from linearization_improved import ImprovedLinearizedDSGE
+from src.dsge_model import load_model
+from src.linearization_improved import ImprovedLinearizedDSGE
 
 def test_improved_linearization():
     """Test the improved symbolic linearization"""
     print("Testing improved linearization...")
     
     # Load model
-    model = load_model('../config/parameters.json')
+    config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'parameters.json')
+    model = load_model(config_path)
     steady_state = model.compute_steady_state()
     
     # Create improved linearization

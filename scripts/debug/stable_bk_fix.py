@@ -4,13 +4,16 @@ Stable Blanchard-Kahn fix with proper stability validation
 """
 
 import numpy as np
-import sys
 import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import sys
+from scipy.linalg import qz
+
+# Add project root to path when running as script
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from src.dsge_model import DSGEModel, ModelParameters
 from src.linearization_improved import ImprovedLinearizedDSGE
-from scipy.linalg import qz
 
 def stable_bk_fix():
     """Implement a stable Blanchard-Kahn fix with proper validation"""
@@ -20,7 +23,8 @@ def stable_bk_fix():
     print("=" * 70)
     
     # Initialize model
-    model = DSGEModel(ModelParameters.from_json('../../config/parameters.json'))
+    config_path = os.path.join(os.path.dirname(__file__), '../..', 'config', 'parameters.json')
+    model = DSGEModel(ModelParameters.from_json(config_path))
     ss = model.compute_steady_state()
     lin_model = ImprovedLinearizedDSGE(model, ss)
     system = lin_model.build_system_matrices()

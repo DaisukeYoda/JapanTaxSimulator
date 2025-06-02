@@ -1,11 +1,13 @@
 """Test linearization and impulse response functions"""
 
+import numpy as np
+import os
 from src.dsge_model import DSGEModel, ModelParameters
 from src.linearization_improved import ImprovedLinearizedDSGE
-import numpy as np
 
 # Load model and compute steady state
-params = ModelParameters.from_json('../config/parameters.json')
+config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'parameters.json')
+params = ModelParameters.from_json(config_path)
 model = DSGEModel(params)
 print("Computing steady state...")
 ss = model.compute_steady_state()
