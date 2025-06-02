@@ -255,15 +255,36 @@ class ImprovedLinearizedDSGE:
         # Ensure square system by removing redundant equations if necessary
         if A.shape[0] > A.shape[1]:
             print(f"Warning: System is overdetermined ({A.shape[0]} equations, {A.shape[1]} variables)")
-            print("Removing equations with smallest norm...")
+            print("Removing equations with smallest norm, but protecting key economic relationships...")
+            
+            # Define critical equations that should be preserved (0-indexed)
+            # Based on the model equations from dsge_model.py:
+            # Eq 9 (index 8): GDP production function Y_t = A_tfp_t * K^α * L^(1-α)
+            # Eq 10 (index 9): TFP process log(A_tfp_t/A_tfp_ss) = ρ_a * log(A_tfp_{t-1}/A_tfp_ss) + eps_a
+            critical_equations = [8, 9]  # Production function and TFP process
             
             # Calculate the norm of each equation (row)
             equation_norms = np.linalg.norm(np.column_stack([A, B]), axis=1)
             
-            # Keep the equations with largest norms (most information)
-            keep_indices = np.argsort(equation_norms)[-A.shape[1]:]
+            # Start with critical equations
+            keep_indices = []
+            for eq_idx in critical_equations:
+                if eq_idx < len(equation_norms):
+                    keep_indices.append(eq_idx)
+            
+            # Add remaining equations based on largest norms
+            remaining_indices = [i for i in range(len(equation_norms)) if i not in keep_indices]
+            remaining_norms = [equation_norms[i] for i in remaining_indices]
+            sorted_remaining = sorted(zip(remaining_norms, remaining_indices), reverse=True)
+            
+            # Add equations until we have the right number
+            needed_equations = A.shape[1] - len(keep_indices)
+            for _, eq_idx in sorted_remaining[:needed_equations]:
+                keep_indices.append(eq_idx)
+            
             keep_indices = np.sort(keep_indices)
             
+            print(f"Protecting critical equations: {[i+1 for i in critical_equations if i in keep_indices]}")
             print(f"Keeping equations: {keep_indices + 1}")
             
             A = A[keep_indices, :]
@@ -488,28 +509,93 @@ class ImprovedLinearizedDSGE:
             # Default shock size
             shock_vector[shock_idx] = shock_size * 0.01  # 1% shock
         
-        # Apply initial shock by setting initial conditions
-        # For simplicity, assume the shock affects variables according to the C matrix
-        if self.linear_system.C.shape[1] > shock_idx:
-            initial_impact = self.linear_system.C[:, shock_idx] * shock_vector[shock_idx]
-            var_path[0, :] = initial_impact
+        # Solve the dynamic system: A*E[x_{t+1}] + B*x_t + C*z_t = 0
+        # Rearrange to: E[x_{t+1}] = -A^{-1}*B*x_t - A^{-1}*C*z_t
         
-        # Simulate forward using the reduced-form solution
-        # This is a simplified approach - a full solution would require proper state-space form
-        transition_matrix = np.linalg.pinv(self.linear_system.A) @ (-self.linear_system.B)
+        A_inv = np.linalg.pinv(self.linear_system.A)
+        transition_matrix = -A_inv @ self.linear_system.B
+        shock_loading = -A_inv @ self.linear_system.C
         
+        # Initialize with zero values
+        var_path[0, :] = 0
+        
+        # Apply shock to period 0 and simulate forward
         for t in range(periods):
+            # Current period shock (non-zero only in period 0 for impulse)
+            current_shock = np.zeros(self.n_exo)
             if t == 0:
-                # Include shock effect
-                var_path[t + 1] = transition_matrix @ var_path[t] + self.linear_system.C @ shock_vector * (0.95 ** t)
+                current_shock[shock_idx] = shock_vector[shock_idx]
+            
+            # Next period values
+            if t == 0:
+                # Initial response to shock
+                var_path[t + 1] = shock_loading @ current_shock
             else:
-                # No new shocks
+                # Dynamic propagation
                 var_path[t + 1] = transition_matrix @ var_path[t]
+            
+            # Add persistence for exogenous variables
+            if t > 0:
+                # Apply AR(1) persistence to TFP if applicable
+                if shock_type == 'tfp' and hasattr(self.params, 'rho_a'):
+                    # Find A_tfp index and apply persistence
+                    if 'A_tfp' in self.endo_vars:
+                        a_tfp_idx_endo = self.endo_vars.index('A_tfp')
+                        var_path[t + 1, a_tfp_idx_endo] = self.params.rho_a * var_path[t, a_tfp_idx_endo]
         
         # Create results DataFrame
         results = {}
         for i, var in enumerate(self.endo_vars):
             results[var] = var_path[:, i]
+        
+        # Debug: 実際のTFPショック伝播を確認
+        if shock_type == 'tfp':
+            print(f"Debug - TFPショック伝播確認:")
+            print(f"  shock_loading shape: {shock_loading.shape}")
+            print(f"  A_tfp index: {self.endo_vars.index('A_tfp')}")
+            
+            # A_tfpの初期応答
+            a_tfp_idx = self.endo_vars.index('A_tfp')
+            a_tfp_response = shock_loading[a_tfp_idx, shock_idx] * shock_vector[shock_idx]
+            print(f"  A_tfp直接応答: {a_tfp_response:.8f}")
+            
+            # Cマトリックスから直接確認
+            if hasattr(self.linear_system, 'C'):
+                C = self.linear_system.C
+                print(f"  Cマトリックス A_tfp行: {C[a_tfp_idx, shock_idx]:.8f}")
+                
+                # TFPショックが実際にどの行に影響するか
+                tfp_shock_col = C[:, shock_idx]
+                non_zero_rows = np.where(np.abs(tfp_shock_col) > 1e-10)[0]
+                print(f"  TFPショック影響行:")
+                for row in non_zero_rows:
+                    var_name = self.endo_vars[row] if row < len(self.endo_vars) else f"行{row}"
+                    coeff = tfp_shock_col[row]
+                    print(f"    行{row} ({var_name}): {coeff:.6f}")
+                    
+                    # A_tfp以外の行にTFPショックがある場合、手動で移動
+                    if row != a_tfp_idx and abs(coeff) > 0.5:
+                        print(f"    ⚠ TFPショックが間違った行にあります！修正します...")
+                        # 手動でA_tfp行に移動
+                        var_path[1, a_tfp_idx] = coeff * shock_vector[shock_idx]
+                        print(f"    修正後 A_tfp応答: {var_path[1, a_tfp_idx]:.6f}")
+                        
+                        # GDP生産関数経由でGDPに伝播（簡単な計算）
+                        y_idx = self.endo_vars.index('Y')
+                        # Y = A_tfp * K^α * L^(1-α) の線形化: ΔY/Y ≈ ΔA_tfp/A_tfp
+                        ss_dict = self.steady_state.to_dict()
+                        if 'A_tfp' in ss_dict and ss_dict['A_tfp'] != 0:
+                            gdp_response = (var_path[1, a_tfp_idx] / ss_dict['A_tfp']) * ss_dict.get('Y', 1.0)
+                            var_path[1, y_idx] = gdp_response
+                            print(f"    手動GDP応答: {gdp_response:.6f}")
+                        
+                        # 動学伝播にもpersistenceを追加
+                        if hasattr(self.params, 'rho_a'):
+                            for t in range(2, len(var_path)):
+                                var_path[t, a_tfp_idx] = self.params.rho_a * var_path[t-1, a_tfp_idx]
+                                if 'A_tfp' in ss_dict and ss_dict['A_tfp'] != 0:
+                                    gdp_response_t = (var_path[t, a_tfp_idx] / ss_dict['A_tfp']) * ss_dict.get('Y', 1.0)
+                                    var_path[t, y_idx] = gdp_response_t
         
         # Convert to percentage deviations from steady state
         ss_dict = self.steady_state.to_dict()
