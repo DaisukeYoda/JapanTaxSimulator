@@ -22,7 +22,7 @@ def enhanced_irf_test():
     
     # Initialize and solve model
     print("\n1. Setting up DSGE model...")
-    model = DSGEModel(ModelParameters.from_json('config/parameters.json'))
+    model = DSGEModel(ModelParameters.from_json('../../config/parameters.json'))
     ss = model.compute_steady_state()
     lin_model = ImprovedLinearizedDSGE(model, ss)
     system = lin_model.build_system_matrices()

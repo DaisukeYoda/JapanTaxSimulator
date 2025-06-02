@@ -23,7 +23,7 @@ def validate_bk_fix():
     print("\n1. Testing the working solution...")
     
     # Initialize and solve model
-    model = DSGEModel(ModelParameters.from_json('config/parameters.json'))
+    model = DSGEModel(ModelParameters.from_json('../../config/parameters.json'))
     ss = model.compute_steady_state()
     lin_model = ImprovedLinearizedDSGE(model, ss)
     system = lin_model.build_system_matrices()

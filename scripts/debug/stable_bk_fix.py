@@ -20,7 +20,7 @@ def stable_bk_fix():
     print("=" * 70)
     
     # Initialize model
-    model = DSGEModel(ModelParameters.from_json('config/parameters.json'))
+    model = DSGEModel(ModelParameters.from_json('../../config/parameters.json'))
     ss = model.compute_steady_state()
     lin_model = ImprovedLinearizedDSGE(model, ss)
     system = lin_model.build_system_matrices()

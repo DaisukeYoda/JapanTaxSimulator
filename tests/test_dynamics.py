@@ -5,7 +5,7 @@ from src.linearization_improved import ImprovedLinearizedDSGE
 import numpy as np
 
 # Load model and compute steady state
-params = ModelParameters.from_json('config/parameters.json')
+params = ModelParameters.from_json('../config/parameters.json')
 model = DSGEModel(params)
 print("Computing steady state...")
 ss = model.compute_steady_state()

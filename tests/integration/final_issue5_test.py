@@ -16,7 +16,7 @@ try:
     print("=== Issue #5 最終確認テスト ===\n")
     
     # モデル構築
-    params = ModelParameters.from_json('config/parameters.json')
+    params = ModelParameters.from_json('../../config/parameters.json')
     model = DSGEModel(params)
     ss = model.compute_steady_state()
     

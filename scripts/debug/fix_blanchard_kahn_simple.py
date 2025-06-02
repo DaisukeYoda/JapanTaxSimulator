@@ -22,7 +22,7 @@ def fix_blanchard_kahn():
     
     # Initialize model
     print("\n1. Initializing model...")
-    model = DSGEModel(ModelParameters.from_json('config/parameters.json'))
+    model = DSGEModel(ModelParameters.from_json('../../config/parameters.json'))
     
     # Compute steady state
     print("\n2. Computing steady state...")

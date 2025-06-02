@@ -3,7 +3,7 @@
 from src.dsge_model import ModelParameters, SteadyState
 import numpy as np
 
-params = ModelParameters.from_json('config/parameters.json')
+params = ModelParameters.from_json('../config/parameters.json')
 
 # Test the new initial guess logic
 ss_defaults = SteadyState()
