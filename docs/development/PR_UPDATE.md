@@ -33,10 +33,10 @@
 ## Parameter Justification Summary
 
 ### Enhancement Parameters
-- **0.1 forward weight**: Based on standard DSGE calibration (Smets & Wouters 2007)
-- **0.9 current adjustment**: Maintains dynamic balance while adding forward structure  
-- **0.2 persistence**: Standard persistence range (0.1-0.5) in macroeconomic models
-- **4 effective variables**: Determined through eigenvalue analysis of enhanced system
+- **$0.1$ forward weight**: Based on standard DSGE calibration (Smets & Wouters 2007)
+- **$0.9$ current adjustment**: Maintains dynamic balance while adding forward structure  
+- **$0.2$ persistence**: Standard persistence range ($0.1$-$0.5$) in macroeconomic models
+- **$4$ effective variables**: Determined through eigenvalue analysis of enhanced system
 
 ### Theoretical Foundation
 - Follows Blanchard-Kahn (1980) conditions for rational expectations models
