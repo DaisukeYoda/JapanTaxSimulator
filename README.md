@@ -100,13 +100,20 @@ JapanTaxSimulator/
 git clone [repository-url]
 cd JapanTaxSimulator
 
-# 必要なパッケージをインストール
-pip install -r requirements.txt
+# uv を使用（推奨・高速）
+uv sync
 
-# または仮想環境を使用
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+# インストール確認
+uv run python quick_check.py
+```
+
+※ uvがインストールされていない場合：
+```bash
+# macOS
+brew install uv
+
+# その他のOS
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 ### 基本的な使用例
@@ -142,7 +149,7 @@ simulator.plot_results(results)
 
 ```bash
 # Jupyter Notebookを起動
-jupyter notebook
+uv run jupyter notebook
 
 # ブラウザで以下のファイルを開く：
 # - notebooks/tax_simulation_demo.ipynb（基本デモ）
@@ -153,10 +160,10 @@ jupyter notebook
 
 ```bash
 # モデルの基本動作確認
-python quick_check.py
+uv run python quick_check.py
 
 # 詳細なテスト実行
-python test_model.py
+uv run pytest
 ```
 
 ## 📈 主要な分析結果（例）
