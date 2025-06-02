@@ -5,13 +5,16 @@ by modifying the linearization module to be more forward-looking
 """
 
 import numpy as np
-import sys
 import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import sys
+from scipy.linalg import qz
+
+# Add project root to path when running as script
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from src.dsge_model import DSGEModel, ModelParameters
 from src.linearization_improved import ImprovedLinearizedDSGE, LinearizedSystem
-from scipy.linalg import qz
 
 def fix_blanchard_kahn():
     """Implement a direct fix for Blanchard-Kahn conditions"""
@@ -22,7 +25,8 @@ def fix_blanchard_kahn():
     
     # Initialize model
     print("\n1. Initializing model...")
-    model = DSGEModel(ModelParameters.from_json('config/parameters.json'))
+    config_path = os.path.join(os.path.dirname(__file__), '../..', 'config', 'parameters.json')
+    model = DSGEModel(ModelParameters.from_json(config_path))
     
     # Compute steady state
     print("\n2. Computing steady state...")

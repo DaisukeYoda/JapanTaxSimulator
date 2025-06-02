@@ -1,11 +1,19 @@
 """Debug linearization matrices to identify issues"""
 
+import sys
+import os
+
+# Add project root to path when running as script
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
 from src.dsge_model import DSGEModel, ModelParameters
 from src.linearization_improved import ImprovedLinearizedDSGE
 import numpy as np
 
 # Load model and compute steady state
-params = ModelParameters.from_json('config/parameters.json')
+config_path = os.path.join(os.path.dirname(__file__), '../..', 'config', 'parameters.json')
+params = ModelParameters.from_json(config_path)
 model = DSGEModel(params)
 print("Computing steady state...")
 ss = model.compute_steady_state()

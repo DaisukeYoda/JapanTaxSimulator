@@ -1,11 +1,13 @@
 """Simple steady state convergence test"""
 
 import numpy as np
+import os
 from src.dsge_model import DSGEModel, ModelParameters, SteadyState
 from scipy.optimize import fsolve
 
 # Load model
-params = ModelParameters.from_json('config/parameters.json')
+config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'parameters.json')
+params = ModelParameters.from_json(config_path)
 model = DSGEModel(params)
 
 # Try with default initial guess

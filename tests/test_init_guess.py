@@ -1,9 +1,10 @@
 """Test the initial guess computation"""
 
-from src.dsge_model import ModelParameters, SteadyState
+import os
 import numpy as np
+from src.dsge_model import ModelParameters, SteadyState
 
-params = ModelParameters.from_json('config/parameters.json')
+params = ModelParameters.from_json(os.path.join(os.path.dirname(__file__), '..', 'config', 'parameters.json'))
 
 # Test the new initial guess logic
 ss_defaults = SteadyState()
