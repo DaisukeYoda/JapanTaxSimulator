@@ -240,25 +240,38 @@ class EnhancedTaxSimulator:
                             shock_sequence: np.ndarray,
                             periods: int) -> pd.DataFrame:
         """Simulate model with given shock sequence"""
+        # Debug information
+        print(f"Debug: n_state={self.linear_model.n_state}, n_s={self.linear_model.n_s}")
+        print(f"Debug: n_control={self.linear_model.n_control}, n_exo={self.linear_model.n_exo}")
+        print(f"Debug: shock_sequence shape={shock_sequence.shape}")
+        
         # Initialize state and control paths
-        state_path = np.zeros((periods, self.linear_model.n_state))
+        # State vector includes both predetermined variables and exogenous shocks
+        total_state_size = self.linear_model.n_state + self.linear_model.n_exo
+        state_path = np.zeros((periods, total_state_size))
         control_path = np.zeros((periods, self.linear_model.n_control))
+        
+        print(f"Debug: state_path shape={state_path.shape}")
+        print(f"Debug: control_path shape={control_path.shape}")
         
         # Simulate
         for t in range(periods):
             # Apply shocks
             if t < len(shock_sequence):
-                state_path[t, self.linear_model.n_s:] = shock_sequence[t]
+                shock_end_idx = min(self.linear_model.n_s + len(shock_sequence[t]), state_path.shape[1])
+                state_path[t, self.linear_model.n_s:shock_end_idx] = shock_sequence[t][:shock_end_idx - self.linear_model.n_s]
             
             # Compute controls
             control_path[t] = self.linear_model.linear_system.P @ state_path[t]
             
             # Update state for next period
             if t < periods - 1:
-                state_path[t + 1, :self.linear_model.n_s] = (self.linear_model.linear_system.Q[:self.linear_model.n_s, :] @
-                                                            state_path[t])
+                # Only update predetermined state variables
+                if self.linear_model.linear_system and self.linear_model.linear_system.Q is not None:
+                    state_path[t + 1, :self.linear_model.n_s] = (self.linear_model.linear_system.Q[:self.linear_model.n_s, :] @
+                                                                state_path[t])
                 if t + 1 < len(shock_sequence):
-                    state_path[t + 1, self.linear_model.n_s:] = shock_sequence[t + 1]
+                    state_path[t + 1, self.linear_model.n_s:self.linear_model.n_s + self.linear_model.n_exo] = shock_sequence[t + 1]
         
         # Convert to levels (not deviations)
         results_dict = {}
