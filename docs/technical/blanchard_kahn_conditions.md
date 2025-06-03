@@ -5,10 +5,10 @@
 The linearized DSGE model failed to satisfy Blanchard-Kahn conditions due to insufficient forward-looking dynamics in the system matrices.
 
 **Original Issue:**
-- A matrix rank: 5/27 (critically low)
-- Explosive eigenvalues: 2
-- Forward-looking variables: 5
-- Result: Model indeterminacy (2 ≠ 5)
+- A matrix rank: $5/27$ (critically low)
+- Explosive eigenvalues: $2$
+- Forward-looking variables: $5$
+- Result: Model indeterminacy ($2 \neq 5$)
 
 ## Solution Methodology
 
@@ -19,9 +19,9 @@ The Blanchard-Kahn conditions require that the number of explosive eigenvalues e
 ### 2. Parameter Selection Rationale
 
 #### Forward-Looking Enhancement Weights
-- **0.1 weight addition**: Small enough to preserve original dynamics, large enough to create meaningful forward-looking structure
-- **0.9 current period adjustment**: Maintains approximate balance while accommodating forward-looking component
-- **0.2 persistence parameter**: Standard persistence level in macroeconomic models (between 0.1-0.5 range)
+- **$0.1$ weight addition**: Small enough to preserve original dynamics, large enough to create meaningful forward-looking structure
+- **$0.9$ current period adjustment**: Maintains approximate balance while accommodating forward-looking component
+- **$0.2$ persistence parameter**: Standard persistence level in macroeconomic models (between $0.1$-$0.5$ range)
 
 **Theoretical Basis:**
 - Based on standard DSGE calibration practices (Smets & Wouters 2007, Christiano et al. 2005)
@@ -29,9 +29,9 @@ The Blanchard-Kahn conditions require that the number of explosive eigenvalues e
 - Sensitivity analysis confirmed robustness to ±50% parameter variations
 
 #### Variable Selection
-- **Primary forward-looking variables**: C, Lambda, Rk_gross, pi_gross (core macro variables with theoretical forward-looking behavior)
-- **Secondary variables**: q, I, Y, w, mc (additional economic variables with potential forward dynamics)
-- **Effective count (4)**: Determined through eigenvalue analysis of enhanced system
+- **Primary forward-looking variables**: $C$, $\Lambda$, $Rk_{gross}$, $\pi_{gross}$ (core macro variables with theoretical forward-looking behavior)
+- **Secondary variables**: $q$, $I$, $Y$, $w$, $mc$ (additional economic variables with potential forward dynamics)
+- **Effective count ($4$)**: Determined through eigenvalue analysis of enhanced system
 
 ### 3. Economic Interpretation
 
