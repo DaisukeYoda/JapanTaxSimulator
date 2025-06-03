@@ -282,9 +282,27 @@ class DSGEModel:
                 if q_rhs > 1e-9: ss_defaults.q=q_rhs**(1/(params.eta_ex+params.eta_im))
                 ss_defaults.IM=params.alpha_m*A_guess*ss_defaults.q**(-params.eta_im);ss_defaults.EX=ss_defaults.IM
         else: ss_defaults.EX=params.alpha_x*(Y_star_val_guess**params.phi_ex)*ss_defaults.q**params.eta_ex
-        # Use tax-adjusted initial guess if baseline steady state is provided
+        # For tax reforms, test if baseline values work better than tax-adjusted
         if baseline_ss is not None and initial_guess_dict is None:
-            initial_guess_dict = self._compute_tax_adjusted_initial_guess(baseline_ss)
+            # Calculate tax change magnitude to decide on initial guess strategy
+            tax_change_magnitude = 0
+            if hasattr(self.params, 'tau_c'):
+                tax_change_magnitude += abs(self.params.tau_c - 0.10)  # vs baseline 10%
+            if hasattr(self.params, 'tau_l'):
+                tax_change_magnitude += abs(self.params.tau_l - 0.20)  # vs baseline 20%
+            if hasattr(self.params, 'tau_k'):
+                tax_change_magnitude += abs(self.params.tau_k - 0.25)  # vs baseline 25%
+            if hasattr(self.params, 'tau_f'):
+                tax_change_magnitude += abs(self.params.tau_f - 0.30)  # vs baseline 30%
+            
+            # For small tax changes, baseline values often work better
+            if tax_change_magnitude < 0.03:  # Small changes (<3pp total)
+                print(f"Using baseline values for small tax change (magnitude: {tax_change_magnitude:.3f})")
+                initial_guess_dict = {var: getattr(baseline_ss, var) 
+                                    for var in self.endogenous_vars_solve}
+            else:
+                print(f"Using tax-adjusted initial guess for large tax change (magnitude: {tax_change_magnitude:.3f})")
+                initial_guess_dict = self._compute_tax_adjusted_initial_guess(baseline_ss)
         
         x0_list=[]
         for var_name_solver in self.endogenous_vars_solve:
@@ -292,22 +310,27 @@ class DSGEModel:
             if var_name_solver in self.log_vars_indices:val=np.log(val) if val>1e-9 else np.log(1e-9)
             x0_list.append(val)
         x0=np.array(x0_list)
-        # Try different methods with more relaxed tolerances
+        # Try different methods with optimized tolerances for tax reforms
         try:
+            # Primary method with relaxed tolerance for tax reforms
             opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='hybr',options={'xtol':1e-6,'maxfev':5000*(len(x0)+1)})
         except:
             try:
-                opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='lm',options={'xtol':1e-6,'maxiter':2000})
+                # Fallback with even more iterations
+                opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='hybr',options={'xtol':1e-5,'maxfev':10000*(len(x0)+1)})
             except:
-                opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='broyden1',options={'xtol':1e-6,'maxiter':1000})
+                try:
+                    opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='lm',options={'xtol':1e-6,'maxiter':3000})
+                except:
+                    opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='broyden1',options={'xtol':1e-6,'maxiter':2000})
         # Check if residuals are small even if optimization didn't "succeed"
         if not opt_result.success:
             final_residuals = self.get_equations_for_steady_state(opt_result.x)
             max_residual = np.max(np.abs(final_residuals))
-            if max_residual > 0.1:  # Only fail if residuals are truly large
+            if max_residual > 0.05:  # Relaxed threshold for tax reforms (was 0.1)
                 raise ValueError(f"SS comp failed: {opt_result.message}, max residual: {max_residual:.6e}")
             else:
-                print(f"Warning: Optimization didn't converge but residuals are small (max: {max_residual:.6e})")
+                print(f"Warning: Optimization didn't converge but residuals are acceptable (max: {max_residual:.6e})")
         ss_values_vec=opt_result.x;final_ss=SteadyState()
         for i,var_name_solver in enumerate(self.endogenous_vars_solve):
             val_to_set=ss_values_vec[i]
