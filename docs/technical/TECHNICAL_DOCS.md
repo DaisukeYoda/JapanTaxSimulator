@@ -819,6 +819,51 @@ def sparse_matrix_operations(A, B):
     return result.toarray()
 ```
 
+## 8. 税制改革シミュレーション (Issue #6 解決)
+
+税制改革シミュレーションは Issue #6 の解決により大幅に改善されました。詳細は `docs/technical/ISSUE_6_RESOLUTION.md` を参照。
+
+### 8.1 改善された機能
+- **自動初期推定値選択**: 税制変更幅に基づく最適戦略
+- **「死の谷」対策**: 1.5-2.5%ポイント範囲の特別処理  
+- **ソルバー最適化**: LM法優先による収束性向上
+- **成功率**: 0/5 → 5/5 に改善
+
+### 8.2 使用方法
+```python
+from src.tax_simulator import EnhancedTaxSimulator, TaxReform
+
+# 税制改革の定義
+reform = TaxReform(
+    name="消費税増税",
+    tau_c=0.12,  # 10% → 12%
+    implementation='permanent'
+)
+
+# シミュレーション実行
+simulator = EnhancedTaxSimulator(model)
+result = simulator.simulate_reform(reform, periods=40)
+
+# 結果の確認
+print(f"厚生変化: {result.welfare_change:.2f}%")
+```
+
+### 8.3 トラブルシューティング
+詳細なガイドは `docs/development/TAX_REFORM_TROUBLESHOOTING.md` を参照。
+
+主な対処法:
+- 大きな税制変更は段階的実装 (`implementation='phased'`) を使用
+- 収束しない場合は税率変更幅を小さくする
+- 非現実的な結果の場合はパラメータ校正を確認
+
+### 8.4 成功事例
+以下の税制改革シナリオが検証済み:
+1. **1%ポイント消費税増税** - 小規模改革の代表例
+2. **2%ポイント消費税増税** - 「死の谷」克服事例
+3. **5%ポイント消費税増税** - 大規模改革の事例
+4. **2%ポイント労働税増税** - 所得税制改革の事例
+5. **混合改革** - 複数税制の同時変更事例
+
 ### 7.3 デバッグ手法
 
 #### 段階的検証
