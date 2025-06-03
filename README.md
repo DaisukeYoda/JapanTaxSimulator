@@ -228,20 +228,20 @@ custom_reform = TaxReform(
 
 #### 家計の最適化問題
 
-$$
+```math
 \max E_0 \sum_{t=0}^{\infty} \beta^t \left[ \log(C_t - hC_{t-1}) - \frac{\chi N_t^{1+1/\sigma_l}}{1+1/\sigma_l} \right]
-$$
+```
 
 制約条件：
-$$
+```math
 (1+\tau_c)C_t + I_t + B_t \leq (1-\tau_l)W_tN_t + (1-\tau_k)R_tK_t + \frac{B_{t-1}}{\pi_t} + T_t
-$$
+```
 
 #### 企業の利潤最大化
 
-$$
+```math
 \max E_0 \sum_{t=0}^{\infty} \Lambda_t \left[ (1-\tau_f)(P_tY_t - W_tN_t - R_tK_t) - \frac{\psi}{2}\left(\frac{I_t}{K_{t-1}} - \delta\right)^2 K_{t-1} \right]
-$$
+```
 
 ### キャリブレーション手法
 
