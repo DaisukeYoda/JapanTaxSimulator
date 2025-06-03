@@ -117,9 +117,9 @@ class EnhancedTaxSimulator:
         if reform.tau_f is not None:
             reform_params.tau_f = reform.tau_f
         
-        # Compute new steady state
+        # Compute new steady state using baseline as initial guess
         reform_model = DSGEModel(reform_params)
-        reform_ss = reform_model.compute_steady_state()
+        reform_ss = reform_model.compute_steady_state(baseline_ss=self.baseline_ss)
         
         # Simulate transition path
         if reform.implementation == 'permanent':
