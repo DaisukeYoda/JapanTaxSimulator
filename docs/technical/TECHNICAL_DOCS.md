@@ -864,9 +864,9 @@ print(f"厚生変化: {result.welfare_change:.2f}%")
 4. **2%ポイント労働税増税** - 所得税制改革の事例
 5. **混合改革** - 複数税制の同時変更事例
 
-### 7.3 デバッグ手法
+### 9. デバッグ手法
 
-#### 段階的検証
+#### 9.1 段階的検証
 ```python
 def debug_model_step_by_step():
     """モデルの段階的デバッグ"""
@@ -901,7 +901,7 @@ def debug_model_step_by_step():
         return
 ```
 
-#### ログ出力の活用
+#### 9.2 ログ出力の活用
 ```python
 import logging
 

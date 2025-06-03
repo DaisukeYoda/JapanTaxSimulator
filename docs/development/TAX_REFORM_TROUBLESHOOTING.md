@@ -298,5 +298,5 @@ for result in results:
 ---
 
 **更新履歴**
-- 2024年XX月XX日: Issue #6解決を受けて初版作成
-- 技術サポート: Claude Code による実装支援
+- 2024年12月3日: Issue #6解決を受けて初版作成
+- 技術担当: Daisuke Yoda
