@@ -645,3 +645,54 @@ class EnhancedTaxSimulator:
             f.write(agg_effects.to_string())
             
             f.write("\n\nEnd of Report\n")
+    
+    def plot_results(self, results, variables: List[str] = None, figsize=(12, 8)):
+        """Plot simulation results"""
+        import matplotlib.pyplot as plt
+        
+        if variables is None:
+            variables = ['Y', 'C', 'I', 'L']
+        
+        # Filter variables that exist in the results
+        available_vars = [var for var in variables if var in results.paths.columns]
+        
+        if not available_vars:
+            print("No plottable variables found in results")
+            return
+        
+        n_vars = len(available_vars)
+        n_cols = min(2, n_vars)
+        n_rows = (n_vars + n_cols - 1) // n_cols
+        
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize)
+        if n_vars == 1:
+            axes = [axes]
+        elif n_rows == 1:
+            axes = axes if n_vars > 1 else [axes]
+        else:
+            axes = axes.flatten()
+        
+        for i, var in enumerate(available_vars):
+            ax = axes[i]
+            
+            # Plot baseline (if available)
+            if hasattr(results, 'baseline_path') and var in results.baseline_path.columns:
+                ax.plot(results.baseline_path.index, results.baseline_path[var], 
+                       'b--', label='Baseline', alpha=0.7)
+            
+            # Plot reform path
+            ax.plot(results.paths.index, results.paths[var], 
+                   'r-', label='Reform', linewidth=2)
+            
+            ax.set_title(f'{var}')
+            ax.set_xlabel('Quarters')
+            ax.set_ylabel('Level')
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+        
+        # Hide unused subplots
+        for i in range(n_vars, len(axes)):
+            axes[i].set_visible(False)
+        
+        plt.tight_layout()
+        return fig
