@@ -295,11 +295,16 @@ class DSGEModel:
             if hasattr(self.params, 'tau_f'):
                 tax_change_magnitude += abs(self.params.tau_f - 0.30)  # vs baseline 30%
             
-            # For small tax changes, baseline values often work better
-            if tax_change_magnitude < 0.03:  # Small changes (<3pp total)
-                print(f"Using baseline values for small tax change (magnitude: {tax_change_magnitude:.3f})")
-                initial_guess_dict = {var: getattr(baseline_ss, var) 
-                                    for var in self.endogenous_vars_solve}
+            # For small tax changes, baseline values often work better, but avoid the "death valley" around 1.5-2.5pp
+            if tax_change_magnitude < 0.015 or (tax_change_magnitude >= 0.015 and tax_change_magnitude <= 0.025):
+                # Use tax-adjusted for the problematic 1.5-2.5pp range
+                if tax_change_magnitude >= 0.015 and tax_change_magnitude <= 0.025:
+                    print(f"Using tax-adjusted initial guess for problematic range (magnitude: {tax_change_magnitude:.3f})")
+                    initial_guess_dict = self._compute_tax_adjusted_initial_guess(baseline_ss)
+                else:
+                    print(f"Using baseline values for small tax change (magnitude: {tax_change_magnitude:.3f})")
+                    initial_guess_dict = {var: getattr(baseline_ss, var) 
+                                        for var in self.endogenous_vars_solve}
             else:
                 print(f"Using tax-adjusted initial guess for large tax change (magnitude: {tax_change_magnitude:.3f})")
                 initial_guess_dict = self._compute_tax_adjusted_initial_guess(baseline_ss)
@@ -311,18 +316,31 @@ class DSGEModel:
             x0_list.append(val)
         x0=np.array(x0_list)
         # Try different methods with optimized tolerances for tax reforms
+        # Detect if this is likely a tax reform (has baseline_ss parameter)
+        is_tax_reform = baseline_ss is not None
+        
         try:
-            # Primary method with relaxed tolerance for tax reforms
-            opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='hybr',options={'xtol':1e-6,'maxfev':5000*(len(x0)+1)})
+            if is_tax_reform:
+                # For tax reforms, try LM method first as it handles problematic cases better
+                opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='lm',options={'xtol':1e-6,'maxiter':3000})
+            else:
+                # For baseline, use hybr method
+                opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='hybr',options={'xtol':1e-6,'maxfev':5000*(len(x0)+1)})
         except:
             try:
-                # Fallback with even more iterations
-                opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='hybr',options={'xtol':1e-5,'maxfev':10000*(len(x0)+1)})
+                # Fallback: try hybr method
+                opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='hybr',options={'xtol':1e-6,'maxfev':5000*(len(x0)+1)})
             except:
                 try:
-                    opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='lm',options={'xtol':1e-6,'maxiter':3000})
+                    # Second fallback: hybr with more iterations
+                    opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='hybr',options={'xtol':1e-5,'maxfev':10000*(len(x0)+1)})
                 except:
-                    opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='broyden1',options={'xtol':1e-6,'maxiter':2000})
+                    try:
+                        # Third fallback: LM method
+                        opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='lm',options={'xtol':1e-6,'maxiter':3000})
+                    except:
+                        # Final fallback: Broyden method
+                        opt_result=optimize.root(self.get_equations_for_steady_state,x0,method='broyden1',options={'xtol':1e-6,'maxiter':2000})
         # Check if residuals are small even if optimization didn't "succeed"
         if not opt_result.success:
             final_residuals = self.get_equations_for_steady_state(opt_result.x)
