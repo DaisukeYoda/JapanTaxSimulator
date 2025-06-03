@@ -92,10 +92,10 @@ The model follows a standard DSGE framework with four main economic sectors:
 
 ### Tax Policy Modeling
 The simulator supports four tax instruments:
-- **τc**: Consumption tax (VAT)
-- **τl**: Labor income tax
-- **τk**: Capital income tax  
-- **τf**: Corporate tax
+- **$\tau_c$**: Consumption tax (VAT)
+- **$\tau_l$**: Labor income tax
+- **$\tau_k$**: Capital income tax  
+- **$\tau_f$**: Corporate tax
 
 Implementation modes:
 - **Permanent**: Tax rate change maintained indefinitely
@@ -111,7 +111,7 @@ The model includes open economy features:
 
 ### Calibration
 Parameters are calibrated to Japanese economic data:
-- Quarterly frequency (β=0.99 ≈ 4% annual discount rate)
+- Quarterly frequency ($\beta=0.99 \approx$ 4% annual discount rate)
 - Tax rates match recent Japanese levels (consumption tax 10%, etc.)
 - Macro ratios target Japanese national accounts data
 
@@ -119,7 +119,7 @@ Parameters are calibrated to Japanese economic data:
 
 ### Parameter Modifications
 Edit `config/parameters.json` to adjust model calibration. Key sections:
-- `model_parameters`: Behavioral parameters (σc, σl, α, etc.)
+- `model_parameters`: Behavioral parameters ($\sigma_c$, $\sigma_l$, $\alpha$, etc.)
 - `tax_parameters.baseline`: Current tax rates
 - `calibration_targets`: Target ratios for steady state
 
@@ -136,8 +136,8 @@ reform = TaxReform(
 
 ### Steady State Convergence Issues
 If steady state computation fails:
-1. Check parameter bounds (especially ensure β < 1, tax rates < 1)
-2. Verify Taylor principle (φπ > 1 for monetary policy)
+1. Check parameter bounds (especially ensure $\beta < 1$, tax rates < 1)
+2. Verify Taylor principle ($\phi_\pi > 1$ for monetary policy)
 3. Try different solver methods in `compute_steady_state()`
 4. Check fiscal sustainability (debt-to-GDP bounds)
 
