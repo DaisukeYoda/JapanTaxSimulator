@@ -227,17 +227,19 @@ custom_reform = TaxReform(
 ### 数学的定式化
 
 #### 家計の最適化問題
-```
-max E₀ Σ(t=0 to ∞) βᵗ [log(Cₜ - hCₜ₋₁) - χNₜ^(1+1/σₗ)/(1+1/σₗ)]
+$$
+\max E_0 \sum_{t=0}^{\infty} \beta^t \left[ \log(C_t - hC_{t-1}) - \chi \frac{N_t^{1+1/\sigma_l}}{1+1/\sigma_l} \right]
+$$
 
 subject to:
-(1+τc)Cₜ + Iₜ + Bₜ ≤ (1-τₗ)WₜNₜ + (1-τₖ)RₜKₜ + Bₜ₋₁/πₜ + Tₜ
-```
+$$
+(1+\tau_c)C_t + I_t + B_t \leq (1-\tau_l)W_t N_t + (1-\tau_k)R_t K_t + \frac{B_{t-1}}{\pi_t} + T_t
+$$
 
 #### 企業の利潤最大化
-```
-max E₀ Σ(t=0 to ∞) Λₜ[(1-τf)(PₜYₜ - WₜNₜ - RₜKₜ) - ψ/2(Iₜ/Kₜ₋₁ - δ)²Kₜ₋₁]
-```
+$$
+\max E_0 \sum_{t=0}^{\infty} \Lambda_t \left[ (1-\tau_f)(P_t Y_t - W_t N_t - R_t K_t) - \frac{\psi}{2} \left( \frac{I_t}{K_{t-1}} - \delta \right)^2 K_{t-1} \right]
+$$
 
 ### キャリブレーション手法
 
