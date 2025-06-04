@@ -1,0 +1,29 @@
+# CODEOWNERS - Japan Tax Simulator Project
+#
+# このファイルは、プロジェクトの各部分について
+# レビューが必要なコードオーナーを定義します
+#
+# 詳細: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# デフォルト: すべてのファイルとディレクトリ
+* @DaisukeYoda
+
+# コアモデル（特に重要）
+/src/dsge_model.py @DaisukeYoda
+/src/linearization*.py @DaisukeYoda  
+/src/tax_simulator.py @DaisukeYoda
+
+# 設定ファイル
+/config/ @DaisukeYoda
+/pyproject.toml @DaisukeYoda
+
+# GitHub設定とCI/CD
+/.github/ @DaisukeYoda
+
+# ドキュメンテーション
+/README.md @DaisukeYoda
+/docs/ @DaisukeYoda
+
+# 将来的に他のメンテナーが参加した場合の例:
+# /notebooks/ @DaisukeYoda @future-maintainer
+# /tests/ @DaisukeYoda @future-maintainer
