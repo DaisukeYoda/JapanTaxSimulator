@@ -65,6 +65,9 @@ class ImprovedLinearizedDSGE:
         self.n_state = len(self.state_vars)
         self.n_control = len(self.control_vars)
         
+        # For compatibility with tax_simulator.py
+        self.n_s = self.n_state
+        
         # Initialize solution matrices
         self.linear_system = None
         
