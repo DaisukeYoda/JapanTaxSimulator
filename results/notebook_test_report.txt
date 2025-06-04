@@ -2,7 +2,48 @@ Jupyter Notebook Test Report
 ==================================================
 
 Summary:
-  Total notebooks: 0
-  Passed: 0
+  Total notebooks: 4
+  Passed: 1
+  Failed: 3
+
+Notebook: interactive_tax_analysis.ipynb
+  Total cells: 8
+  Executed: 6
+  Failed: 1
+  Time: 3.8s
+  Errors:
+    - Cell 10: ZeroDivisionError: float division by zero
+
+Notebook: tax_simulation_demo.ipynb
+  Total cells: 15
+  Executed: 12
   Failed: 0
+  Time: 2.8s
+
+Notebook: empirical_validation.ipynb
+  Total cells: 8
+  Executed: 6
+  Failed: 1
+  Time: 2.8s
+  Errors:
+    - Cell 14: KeyError: '消費税12%'
+
+Notebook: advanced_tax_simulation_demo.ipynb
+  Total cells: 14
+  Executed: 13
+  Failed: 12
+  Time: 2.9s
+  Errors:
+    - Cell 4: FileNotFoundError: [Errno 2] No such file or directory: '../config/parameters.json'
+    - Cell 6: NameError: name 'linear_model' is not defined
+    - Cell 8: NameError: name 'baseline_model' is not defined
+    - Cell 9: NameError: name 'reforms' is not defined
+    - Cell 11: KeyError: '消費税5%引き上げ（恒久的）'
+    - Cell 12: KeyError: '消費税5%引き上げ（恒久的）'
+    - Cell 14: NameError: name 'tax_simulator' is not defined
+    - Cell 16: KeyError: '税制中立改革（消費税↑所得税↓）'
+    - Cell 17: NameError: name 'neutral_reform_results' is not defined
+    - Cell 19: NameError: name 'linear_model' is not defined
+    - Cell 21: NameError: name 'tax_simulator' is not defined
+    - Cell 23: OSError: Cannot save file into a non-existent directory: '../results'
 

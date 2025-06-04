@@ -1,8 +1,0 @@
-# This project now uses uv for dependency management.
-# Dependencies are defined in pyproject.toml
-#
-# To install dependencies:
-#   uv sync
-#
-# For more information:
-#   See README.md or UV_USAGE.md
