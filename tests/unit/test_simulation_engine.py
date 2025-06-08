@@ -26,7 +26,8 @@ class TestEnhancedTaxSimulatorInitialization:
         # EnhancedTaxSimulator requires pre-computed steady state
         model.compute_steady_state()
         
-        simulator = EnhancedTaxSimulator(model)
+        # Force use of complex model for testing baseline attributes
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         assert simulator.baseline_model is model
         assert simulator.baseline_params is params
@@ -45,7 +46,7 @@ class TestEnhancedTaxSimulatorInitialization:
         
         # Should handle gracefully with fallback
         try:
-            simulator = EnhancedTaxSimulator(model)
+            simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
             # Should still initialize basic attributes
             assert simulator.baseline_model is model
             assert simulator.baseline_params is params
@@ -59,7 +60,7 @@ class TestEnhancedTaxSimulatorInitialization:
         model = DSGEModel(params)
         model.compute_steady_state()
         
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         # Should have reasonable default simulation parameters
         assert hasattr(simulator, 'baseline_model')
@@ -76,7 +77,7 @@ class TestSimulationMethods:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         # Mock the core simulation method
         mock_path = np.random.rand(40, 10)  # 40 periods, 10 variables
@@ -104,7 +105,7 @@ class TestSimulationMethods:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         # Mock simulation returns
         mock_path_reform = np.random.rand(40, 10)
@@ -132,7 +133,7 @@ class TestSimulationMethods:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         # Mock simulation
         mock_path = np.random.rand(40, 10)
@@ -158,7 +159,7 @@ class TestSimulationMethods:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         # Test scaling for different tax change magnitudes
         small_change = 0.01  # 1 percentage point
@@ -180,7 +181,7 @@ class TestWelfareCalculation:
         params = ModelParameters(beta=0.99, habit=0.6, sigma_c=1.5, sigma_l=2.0, chi=3.0)
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         # Mock consumption and labor paths
         periods = 20
@@ -209,7 +210,7 @@ class TestWelfareCalculation:
         params = ModelParameters(beta=0.99, habit=0.8, sigma_c=1.5)  # Strong habit
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         periods = 10
         # Create consumption path with gradual increase (habit matters)
@@ -234,7 +235,7 @@ class TestWelfareCalculation:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         periods = 5
         
@@ -259,7 +260,7 @@ class TestWelfareCalculation:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         periods = 10
         baseline_C = np.ones(periods) * 0.6
@@ -287,7 +288,7 @@ class TestFiscalImpactAnalysis:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         # Mock baseline and reform paths as DataFrames
         periods = 40
@@ -320,7 +321,7 @@ class TestFiscalImpactAnalysis:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         periods = 40
         baseline_path = pd.DataFrame({
@@ -345,7 +346,7 @@ class TestFiscalImpactAnalysis:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         periods = 20
         baseline_path = pd.DataFrame({
@@ -374,7 +375,7 @@ class TestTransitionAnalysis:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         # Create mock transition path that converges
         periods = 30
@@ -403,7 +404,7 @@ class TestTransitionAnalysis:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         # Slow convergence path
         periods = 40
@@ -430,7 +431,7 @@ class TestTransitionAnalysis:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         # Oscillating or non-converging path
         periods = 20
@@ -461,7 +462,7 @@ class TestSimulationValidation:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         # Reasonable steady state changes
         baseline_ss = SteadyState(Y=1.0, C=0.6, I=0.2)
@@ -478,7 +479,7 @@ class TestSimulationValidation:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         # Extreme changes
         baseline_ss = SteadyState(Y=1.0, C=0.6, I=0.2)
@@ -528,7 +529,7 @@ class TestErrorHandlingAndEdgeCases:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         # Reform that might cause steady state failure
         extreme_reform = TaxReform(
@@ -550,7 +551,7 @@ class TestErrorHandlingAndEdgeCases:
         params = ModelParameters()
         model = DSGEModel(params)
         model.compute_steady_state()
-        simulator = EnhancedTaxSimulator(model)
+        simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
         
         reform = TaxReform(name="Test", tau_c=0.12)
         
@@ -600,7 +601,7 @@ class TestErrorHandlingAndEdgeCases:
             model.compute_steady_state()  # Need steady state for initialization
             
             # Should initialize with mocked linearization
-            simulator = EnhancedTaxSimulator(model)
+            simulator = EnhancedTaxSimulator(model, use_simple_model=False, use_simple_linearization=True)
             
             # Should have basic attributes
             assert hasattr(simulator, 'baseline_model')

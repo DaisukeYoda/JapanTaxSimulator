@@ -1,0 +1,35 @@
+Notebook包括的検証レポート
+==================================================
+
+検証日時: 2025-06-08 20:33:21
+対象Notebook数: 4
+
+実行成功率: 100.0%
+研究整合性クリーン: 0件
+エラーハンドリング良好: 0件
+
+改善提案:
+  - 🚨 CRITICAL: DummySteadyState使用検出 - 学術研究には使用不可。use_simple_model=Falseを使用してください。
+  - ⚠️ エラーハンドリングの改善が必要。極端なパラメータでのrobust性を向上させてください。
+
+詳細結果:
+
+interactive_tax_analysis.ipynb:
+  基本実行: success
+  研究整合性: issues_found
+  エラーハンドリング: needs_improvement
+
+tax_simulation_demo.ipynb:
+  基本実行: success
+  研究整合性: issues_found
+  エラーハンドリング: needs_improvement
+
+empirical_validation.ipynb:
+  基本実行: success
+  研究整合性: issues_found
+  エラーハンドリング: needs_improvement
+
+advanced_tax_simulation_demo.ipynb:
+  基本実行: success
+  研究整合性: issues_found
+  エラーハンドリング: needs_improvement
