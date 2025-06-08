@@ -15,6 +15,7 @@ import json
 from dataclasses import dataclass, field
 import sympy
 from sympy import log, exp # Import specific sympy functions for convenience
+from .utils import safe_divide, validate_economic_variables
 
 @dataclass
 class ModelParameters:
@@ -108,37 +109,102 @@ class DSGEModel:
         return syms[0] if lags==0 and leads==0 else tuple(syms)
 
     def get_equations_for_steady_state(self, x_solve: np.ndarray) -> np.ndarray:
-        params=self.params; vars_dict={}
-        for i,var_name in enumerate(self.endogenous_vars_solve):
-            val=x_solve[i]
-            if var_name in self.log_vars_indices:vars_dict[var_name]=np.exp(val)
-            else:vars_dict[var_name]=val
-        Y=vars_dict['Y'];C=vars_dict['C'];I=vars_dict['I'];K=vars_dict['K'];L=vars_dict['L']
-        w=vars_dict['w'];Rk_gross=vars_dict['Rk_gross'];r_net_real=vars_dict['r_net_real']
-        pi_gross=vars_dict['pi_gross'];i_nominal_gross=vars_dict['i_nominal_gross'];G=vars_dict['G']
-        B_real=vars_dict['B_real'];Lambda=vars_dict['Lambda'];mc=vars_dict['mc'];profit=vars_dict['profit']
-        q_val=vars_dict['q'];b_star=vars_dict['b_star'];IM=vars_dict['IM'];EX=vars_dict['EX'] 
-        A_val=C+I+G;Y_star_val=params.ystar_ss
-        by_target_q=params.by_ratio/4  # Convert annual debt/GDP ratio to quarterly 
-        # Calculate effective labor tax rate with bounds to prevent unrealistic values
-        debt_feedback = params.phi_b*((B_real/(Y if Y!=0 else 1e-6))-by_target_q)
-        tau_l_effective_ss = max(0.05, min(0.8, params.tau_l_ss + debt_feedback))  # Bounded between 5% and 80%
-        Tc_val=params.tau_c*C;Tl_val=tau_l_effective_ss*w*L;Tk_val=params.tau_k*Rk_gross*K
-        Tf_val=params.tau_f*profit;T_val=Tc_val+Tl_val+Tk_val+Tf_val
-        eqns=[(1-params.beta*params.habit)/(C*(1-params.habit))-Lambda*(1+params.tau_c),
-              params.chi*L**(1/params.sigma_l)-Lambda*(1-tau_l_effective_ss)*w/(1+params.tau_c),
-              Lambda-params.beta*Lambda*(1+r_net_real)/pi_gross,Y-K**params.alpha*L**(1-params.alpha),
-              w-mc*(1-params.alpha)*Y/L if L!=0 else w-mc*(1-params.alpha)*Y/1e-6,
-              Rk_gross-mc*params.alpha*Y/K if K!=0 else Rk_gross-mc*params.alpha*Y/1e-6,
-              pi_gross-params.pi_target,mc-(params.epsilon-1)/params.epsilon,
-              G+r_net_real*B_real-T_val, 
-              G-params.gy_ratio*Y*(1-params.phi_b*((B_real/(Y if Y!=0 else 1e-6))-by_target_q)),
-              i_nominal_gross-params.pi_target*(pi_gross/params.pi_target)**params.phi_pi,
-              (1+r_net_real)-i_nominal_gross/pi_gross,I-params.delta*K,
-              (1-params.tau_k)*Rk_gross-params.delta-r_net_real,profit-(1-mc)*Y,
-              IM-params.alpha_m*A_val*q_val**(-params.eta_im),
-              EX-params.alpha_x*(Y_star_val**params.phi_ex)*q_val**params.eta_ex,
-              b_star-params.b_star_target_level,Y-(C+I+G+q_val*b_star*(1-(1/params.beta)))]
+        params = self.params
+        vars_dict = {}
+        
+        # 変数のマッピング
+        for i, var_name in enumerate(self.endogenous_vars_solve):
+            val = x_solve[i]
+            if var_name in self.log_vars_indices:
+                vars_dict[var_name] = np.exp(val)
+            else:
+                vars_dict[var_name] = val
+        
+        # 主要変数の展開
+        Y = vars_dict['Y']; C = vars_dict['C']; I = vars_dict['I']
+        K = vars_dict['K']; L = vars_dict['L']; w = vars_dict['w']
+        Rk_gross = vars_dict['Rk_gross']; r_net_real = vars_dict['r_net_real']
+        pi_gross = vars_dict['pi_gross']; i_nominal_gross = vars_dict['i_nominal_gross']
+        G = vars_dict['G']; B_real = vars_dict['B_real']; Lambda = vars_dict['Lambda']
+        mc = vars_dict['mc']; profit = vars_dict['profit']
+        
+        # 開放経済変数（段階的に簡略化）
+        q_val = vars_dict.get('q', 1.0)  # 実質為替レート（閉鎖経済では1）
+        b_star = vars_dict.get('b_star', 0.0)  # 対外純資産（閉鎖経済では0）
+        IM = vars_dict.get('IM', 0.0)  # 輸入（簡略化）
+        EX = vars_dict.get('EX', 0.0)  # 輸出（簡略化）
+        
+        # 簡略化された政府債務・税率設定
+        by_target_q = params.by_ratio / 4  # 四半期基準の目標債務/GDP比率
+        
+        # 簡略化された労働税率（債務フィードバックルールを簡単化）
+        debt_ratio = B_real / max(Y, 1e-6)
+        debt_feedback = params.phi_b * (debt_ratio - by_target_q)
+        tau_l_effective = np.clip(params.tau_l + debt_feedback, 0.05, 0.8)
+        
+        # 税収計算
+        Tc_val = params.tau_c * C
+        Tl_val = tau_l_effective * w * L
+        Tk_val = params.tau_k * Rk_gross * K
+        Tf_val = params.tau_f * profit
+        T_val = Tc_val + Tl_val + Tk_val + Tf_val
+        
+        # 定常状態方程式（簡略化・安定化版）
+        eqns = [
+            # 1. 家計の最適化（消費）
+            (1 - params.beta * params.habit) / (C * (1 - params.habit)) - Lambda * (1 + params.tau_c),
+            
+            # 2. 家計の最適化（労働）
+            params.chi * L**(1/params.sigma_l) - Lambda * (1 - tau_l_effective) * w / (1 + params.tau_c),
+            
+            # 3. オイラー方程式（定常状態）
+            Lambda - params.beta * Lambda * (1 + r_net_real) / pi_gross,
+            
+            # 4. 生産関数
+            Y - K**params.alpha * L**(1 - params.alpha),
+            
+            # 5. 労働の1階条件（簡略化）
+            w - (1 - params.alpha) * Y / max(L, 1e-6),
+            
+            # 6. 資本の1階条件（簡略化）
+            Rk_gross - params.alpha * Y / max(K, 1e-6),
+            
+            # 7. インフレーション（定常状態）
+            pi_gross - params.pi_target,
+            
+            # 8. マークアップ（簡略化）
+            mc - (params.epsilon - 1) / params.epsilon,
+            
+            # 9. 政府予算制約（簡略化）
+            G + r_net_real * B_real - T_val,
+            
+            # 10. 政府支出ルール（簡略化）
+            G - params.gy_ratio * Y,
+            
+            # 11. Taylor ルール（定常状態）
+            i_nominal_gross - params.pi_target * (pi_gross / params.pi_target)**params.phi_pi,
+            
+            # 12. Fisher方程式
+            (1 + r_net_real) - i_nominal_gross / pi_gross,
+            
+            # 13. 資本蓄積（定常状態）
+            I - params.delta * K,
+            
+            # 14. 投資の最適化
+            (1 - params.tau_k) * Rk_gross - params.delta - r_net_real,
+            
+            # 15. 利潤定義
+            profit - (1 - mc) * Y,
+            
+            # 16-18. 開放経済（簡略化 - 閉鎖経済近似）
+            IM,  # 輸入 = 0（簡略化）
+            EX,  # 輸出 = 0（簡略化）
+            b_star,  # 対外純資産 = 0（簡略化）
+            
+            # 19. 総需要バランス（閉鎖経済版）
+            Y - (C + I + G)
+        ]
+        
         return np.array(eqns)
 
     def _compute_tax_adjusted_initial_guess(self, baseline_ss: Optional[SteadyState] = None) -> Dict[str, float]:
