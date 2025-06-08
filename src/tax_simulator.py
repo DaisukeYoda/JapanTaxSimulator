@@ -35,15 +35,8 @@ from .research_warnings import (
 check_research_mode()
 
 # 簡略化DSGEモデルのインポート
-import sys
-import os
-# Add dev_tools to path
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-dev_tools_path = os.path.join(project_root, 'dev_tools')
-sys.path.insert(0, dev_tools_path)
-
 try:
-    from create_simple_dsge import SimpleDSGEModel, SimpleDSGEParameters, SimpleSteadyState
+    from .models.simple_dsge import SimpleDSGEModel, SimpleDSGEParameters, SimpleSteadyState
     SIMPLE_MODEL_AVAILABLE = True
     
     # Warn about simplified model usage
@@ -1063,8 +1056,10 @@ class EnhancedTaxSimulator:
             col = i % n_cols
             axes[row, col].set_visible(False)
         
-        # Use safe Japanese title - 直接英語タイトルを使用して文字化けを回避
-        plt.suptitle(f'Transition Dynamics: {results.name}', fontsize=14, fontweight='bold')
+        # Use safe Japanese title function
+        title = safe_japanese_title(f'推移ダイナミクス: {results.name}', 
+                                   f'Transition Dynamics: {results.name}')
+        plt.suptitle(title, fontsize=14, fontweight='bold')
         plt.tight_layout()
         
         return fig
