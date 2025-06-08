@@ -168,6 +168,53 @@ Always verify:
 
 The model is designed for policy analysis, so prioritize economic interpretability and robustness over computational speed. Always validate results against economic intuition and existing literature.
 
+## Linearization Method Selection (Issue #30 Resolution)
+
+**⚠️ CRITICAL FOR RESEARCH**: As of June 2025, Issue #30 analysis revealed significant accuracy differences between linearization methods:
+
+### Method Comparison Results
+- **83% of scenarios show >5% difference** between simplified and full linearization
+- **Maximum difference: 7.54%** (income tax reduction scenario)
+- **Only small reforms (<2pp)** show acceptable differences
+
+### Usage Guidelines
+
+**🎓 Academic Research & Policy Analysis:**
+```python
+simulator = EnhancedTaxSimulator(
+    model, 
+    use_simple_model=False,
+    use_simple_linearization=False  # REQUIRED for research
+)
+```
+
+**📚 Demonstrations & Education:**
+```python
+simulator = EnhancedTaxSimulator(
+    model,
+    use_simple_model=False, 
+    use_simple_linearization=True   # Stable, easy to understand
+)
+```
+
+**🔍 Robustness Testing:**
+```python
+# Run both methods and compare results
+# Report differences if >5% for transparency
+```
+
+### Technical Details
+- **Simplified**: Fixed coefficients, always stable, fast computation
+- **Full Klein**: DSGE-derived, Blanchard-Kahn conditions, theoretical rigor
+- **Decision threshold**: 5% relative difference for significance
+
+### Documentation
+- Full analysis: `docs/technical/LINEARIZATION_METHOD_GUIDE.md`
+- Comparison tool: `scripts/validation/linearization_method_comparison.py`
+- Test suite: `scripts/validation/test_linearization_options.py`
+
+**Academic Integrity**: Always specify the linearization method in publications. Default behavior (auto-selection) triggers research warnings.
+
 # CRITICAL ACADEMIC RESEARCH REQUIREMENTS
 
 **⚠️ WARNING: This is a RESEARCH CODEBASE for academic and policy analysis.**

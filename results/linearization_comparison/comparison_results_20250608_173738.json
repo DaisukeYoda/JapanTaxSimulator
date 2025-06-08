@@ -1,0 +1,140 @@
+[
+  {
+    "scenario_name": "小規模消費税増税_1pp",
+    "metrics": {
+      "timestamp": "2025-06-08T17:37:37.792625",
+      "simple_method_success": true,
+      "full_method_success": true,
+      "comparison_possible": true,
+      "max_relative_difference_pct": 0.7200000000000099,
+      "significant_difference_detected": false,
+      "num_variables_compared": 5
+    },
+    "convergence_info": {
+      "simple_converged": true,
+      "full_converged": false,
+      "simple_error": null,
+      "full_error": null
+    },
+    "differences_summary": {
+      "computation_success": true,
+      "overall_max_rel_diff_pct": 0.7200000000000099,
+      "significant_difference": false
+    }
+  },
+  {
+    "scenario_name": "中規模消費税増税_3pp",
+    "metrics": {
+      "timestamp": "2025-06-08T17:37:38.003618",
+      "simple_method_success": true,
+      "full_method_success": true,
+      "comparison_possible": true,
+      "max_relative_difference_pct": 6.289811630600475,
+      "significant_difference_detected": true,
+      "num_variables_compared": 5
+    },
+    "convergence_info": {
+      "simple_converged": true,
+      "full_converged": false,
+      "simple_error": null,
+      "full_error": null
+    },
+    "differences_summary": {
+      "computation_success": true,
+      "overall_max_rel_diff_pct": 6.289811630600475,
+      "significant_difference": true
+    }
+  },
+  {
+    "scenario_name": "大規模消費税増税_5pp",
+    "metrics": {
+      "timestamp": "2025-06-08T17:37:38.177539",
+      "simple_method_success": true,
+      "full_method_success": true,
+      "comparison_possible": true,
+      "max_relative_difference_pct": 6.118652513642995,
+      "significant_difference_detected": true,
+      "num_variables_compared": 5
+    },
+    "convergence_info": {
+      "simple_converged": true,
+      "full_converged": false,
+      "simple_error": null,
+      "full_error": null
+    },
+    "differences_summary": {
+      "computation_success": true,
+      "overall_max_rel_diff_pct": 6.118652513642995,
+      "significant_difference": true
+    }
+  },
+  {
+    "scenario_name": "所得税減税_2pp",
+    "metrics": {
+      "timestamp": "2025-06-08T17:37:38.358833",
+      "simple_method_success": true,
+      "full_method_success": true,
+      "comparison_possible": true,
+      "max_relative_difference_pct": 7.539273184390137,
+      "significant_difference_detected": true,
+      "num_variables_compared": 5
+    },
+    "convergence_info": {
+      "simple_converged": true,
+      "full_converged": false,
+      "simple_error": null,
+      "full_error": null
+    },
+    "differences_summary": {
+      "computation_success": true,
+      "overall_max_rel_diff_pct": 7.539273184390137,
+      "significant_difference": true
+    }
+  },
+  {
+    "scenario_name": "税制中立改革_消費税up所得税down",
+    "metrics": {
+      "timestamp": "2025-06-08T17:37:38.538070",
+      "simple_method_success": true,
+      "full_method_success": true,
+      "comparison_possible": true,
+      "max_relative_difference_pct": 6.518023833516152,
+      "significant_difference_detected": true,
+      "num_variables_compared": 5
+    },
+    "convergence_info": {
+      "simple_converged": true,
+      "full_converged": false,
+      "simple_error": null,
+      "full_error": null
+    },
+    "differences_summary": {
+      "computation_success": true,
+      "overall_max_rel_diff_pct": 6.518023833516152,
+      "significant_difference": true
+    }
+  },
+  {
+    "scenario_name": "段階的消費税増税_4期",
+    "metrics": {
+      "timestamp": "2025-06-08T17:37:38.715391",
+      "simple_method_success": true,
+      "full_method_success": true,
+      "comparison_possible": true,
+      "max_relative_difference_pct": 6.2042320721217346,
+      "significant_difference_detected": true,
+      "num_variables_compared": 5
+    },
+    "convergence_info": {
+      "simple_converged": true,
+      "full_converged": false,
+      "simple_error": null,
+      "full_error": null
+    },
+    "differences_summary": {
+      "computation_success": true,
+      "overall_max_rel_diff_pct": 6.2042320721217346,
+      "significant_difference": true
+    }
+  }
+]

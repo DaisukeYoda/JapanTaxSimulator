@@ -122,8 +122,17 @@ class EnhancedTaxSimulator:
         "Results may change unexpectedly between model types without user awareness. "
         "For research: Use specific model classes and validate convergence explicitly."
     )
-    def __init__(self, baseline_model: DSGEModel, use_simple_model: bool = True):
+    def __init__(self, 
+                 baseline_model: DSGEModel, 
+                 use_simple_model: bool = True,
+                 use_simple_linearization: Optional[bool] = None):
         self.use_simple_model = use_simple_model and SIMPLE_MODEL_AVAILABLE
+        
+        # 線形化手法の設定
+        # None: 自動選択（デモ用=簡略化、研究用=要注意）
+        # True: 簡略化線形化を強制使用（デモ・教育用推奨）
+        # False: 完全線形化を強制使用（学術研究・政策分析用推奨）
+        self.use_simple_linearization = use_simple_linearization
         
         if self.use_simple_model:
             # 簡略化DSGEモデルを使用
@@ -148,12 +157,45 @@ class EnhancedTaxSimulator:
             
             self.linear_model = ImprovedLinearizedDSGE(baseline_model, self.baseline_ss)
             
-            # デモンストレーション用にシンプル線形化を強制使用
-            print("シンプルで安定した線形化システムを使用します...")
-            self._setup_simple_linearization()
+            # 線形化手法の選択
+            self._configure_linearization_method()
         
         # Storage for results
         self.results = {}
+    
+    def _configure_linearization_method(self):
+        """線形化手法の設定と適切な警告の表示"""
+        if self.use_simple_linearization is True:
+            # 簡略化線形化を明示的に選択
+            print("✅ 簡略化線形化を使用（デモ・教育用途）")
+            print("   注意: 学術研究では use_simple_linearization=False を推奨")
+            self._setup_simple_linearization()
+            
+        elif self.use_simple_linearization is False:
+            # 完全線形化を明示的に選択
+            print("🎯 完全線形化を使用（学術研究・政策分析用途）") 
+            print("   Klein解法によるBlanchard-Kahn条件を適用")
+            try:
+                self.linear_model.build_system_matrices()
+                P, Q = self.linear_model.solve_klein()
+                print("✅ 完全線形化の設定完了")
+            except Exception as e:
+                print(f"⚠️ 完全線形化に失敗: {e}")
+                print("   フォールバック: 簡略化線形化を使用")
+                self._setup_simple_linearization()
+                
+        else:
+            # 自動選択（デフォルト動作、互換性のため）
+            warnings.warn(
+                "⚠️ RESEARCH WARNING: 線形化手法が自動選択されました。"
+                "学術研究では use_simple_linearization=False（完全線形化）を明示的に指定してください。"
+                "デモ用途では use_simple_linearization=True（簡略化）を指定してください。",
+                ResearchWarning,
+                stacklevel=3
+            )
+            print("🔄 自動選択: 安定性優先で簡略化線形化を使用")
+            print("   学術用途: use_simple_linearization=False を推奨")
+            self._setup_simple_linearization()
     
     def _setup_simple_linearization(self):
         """シンプルな線形化手法（Klein解法が失敗した場合の代替）"""
