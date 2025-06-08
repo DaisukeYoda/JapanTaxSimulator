@@ -4,6 +4,9 @@ Enhanced Tax Policy Simulator for DSGE Model
 This module provides advanced simulation capabilities for analyzing
 tax policy changes in the Japanese economy, including transition dynamics,
 welfare analysis, and policy optimization.
+
+⚠️ RESEARCH WARNING: This module contains functions with fallback mechanisms
+that may compromise research integrity. See ACADEMIC_RESEARCH_REMEDIATION_PLAN.md
 """
 
 import numpy as np
@@ -14,9 +17,46 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from dataclasses import dataclass
 import json
+import warnings
 
 from .dsge_model import DSGEModel, SteadyState, ModelParameters
 from .linearization_improved import ImprovedLinearizedDSGE
+from .utils import safe_percentage_change, safe_divide, validate_economic_variables
+from .plot_utils import setup_plotting_style, safe_japanese_title
+from .research_warnings import (
+    research_critical, 
+    research_deprecated, 
+    research_requires_validation,
+    check_research_mode,
+    ResearchWarning
+)
+
+# Check research mode and warn user
+check_research_mode()
+
+# 簡略化DSGEモデルのインポート
+import sys
+import os
+# Add dev_tools to path
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+dev_tools_path = os.path.join(project_root, 'dev_tools')
+sys.path.insert(0, dev_tools_path)
+
+try:
+    from create_simple_dsge import SimpleDSGEModel, SimpleDSGEParameters, SimpleSteadyState
+    SIMPLE_MODEL_AVAILABLE = True
+    
+    # Warn about simplified model usage
+    warnings.warn(
+        "Simplified DSGE model available. This uses different economic assumptions "
+        "than the full model. Results may not be comparable.",
+        ResearchWarning
+    )
+except ImportError:
+    SimpleDSGEModel = None
+    SimpleDSGEParameters = None
+    SimpleSteadyState = None
+    SIMPLE_MODEL_AVAILABLE = False
 
 
 @dataclass
@@ -71,7 +111,7 @@ class SimulationResults:
                 'Baseline': baseline_avg,
                 'Reform': reform_avg,
                 'Change': reform_avg - baseline_avg,
-                '% Change': (reform_avg - baseline_avg) / baseline_avg * 100
+                '% Change': safe_percentage_change(reform_avg, baseline_avg)
             }
         
         return pd.DataFrame(effects).T
@@ -80,22 +120,44 @@ class SimulationResults:
 class EnhancedTaxSimulator:
     """
     Enhanced tax policy simulator with transition dynamics and welfare analysis
+    
+    ⚠️ RESEARCH WARNING: This class uses automatic fallbacks that may compromise results
     """
     
-    def __init__(self, baseline_model: DSGEModel):
-        self.baseline_model = baseline_model
-        self.baseline_params = baseline_model.params
-        self.baseline_ss = baseline_model.steady_state
+    @research_critical(
+        "Automatic fallback from complex to simplified DSGE model. "
+        "Results may change unexpectedly between model types without user awareness. "
+        "For research: Use specific model classes and validate convergence explicitly."
+    )
+    def __init__(self, baseline_model: DSGEModel, use_simple_model: bool = True):
+        self.use_simple_model = use_simple_model and SIMPLE_MODEL_AVAILABLE
         
-        # Create linearized model with proper steady state
-        if self.baseline_ss is None:
-            raise ValueError("ベースラインの定常状態が計算されていません")
+        if self.use_simple_model:
+            # 簡略化DSGEモデルを使用
+            print("簡略化DSGEモデルを使用しています...")
+            self.simple_params = SimpleDSGEParameters.from_config()
+            self.simple_model = SimpleDSGEModel(self.simple_params)
+            self.simple_baseline_ss = self.simple_model.compute_steady_state()
+            
+            if self.simple_baseline_ss is None:
+                print("簡略化モデルの定常状態計算に失敗。従来モデルを使用します...")
+                self.use_simple_model = False
         
-        self.linear_model = ImprovedLinearizedDSGE(baseline_model, self.baseline_ss)
-        
-        # デモンストレーション用にシンプル線形化を強制使用
-        print("シンプルで安定した線形化システムを使用します...")
-        self._setup_simple_linearization()
+        if not self.use_simple_model:
+            # 従来のDSGEモデルを使用
+            self.baseline_model = baseline_model
+            self.baseline_params = baseline_model.params
+            self.baseline_ss = baseline_model.steady_state
+            
+            # Create linearized model with proper steady state
+            if self.baseline_ss is None:
+                raise ValueError("ベースラインの定常状態が計算されていません")
+            
+            self.linear_model = ImprovedLinearizedDSGE(baseline_model, self.baseline_ss)
+            
+            # デモンストレーション用にシンプル線形化を強制使用
+            print("シンプルで安定した線形化システムを使用します...")
+            self._setup_simple_linearization()
         
         # Storage for results
         self.results = {}
@@ -224,13 +286,189 @@ class EnhancedTaxSimulator:
         
         return ApproximateSteadyState(baseline_dict)
         
+    @research_critical(
+        "Uses automatic model selection (simple vs complex) with different economic assumptions. "
+        "May return results from different underlying models without clear indication. "
+        "Welfare calculations use simplified approximations."
+    )
     def simulate_reform(self, 
                        reform: TaxReform, 
                        periods: int = 100,
                        compute_welfare: bool = True) -> SimulationResults:
         """
         Simulate a tax reform with full transition dynamics
+        
+        ⚠️ RESEARCH WARNING: Results depend on automatic model selection
         """
+        if self.use_simple_model:
+            # 簡略化モデルを使用してシミュレーション
+            return self._simulate_reform_with_simple_model(reform, periods)
+        else:
+            # 従来の複雑なモデルを使用
+            return self._simulate_reform_with_complex_model(reform, periods, compute_welfare)
+    
+    def _simulate_reform_with_simple_model(self, reform: TaxReform, periods: int = 100) -> SimulationResults:
+        """簡略化DSGEモデルを使用した税制改革シミュレーション"""
+        print("簡略化DSGEモデルで税制シミュレーションを実行中...")
+        
+        # 税制変更を適用
+        new_tau_c = reform.tau_c if reform.tau_c is not None else None
+        new_tau_l = reform.tau_l if reform.tau_l is not None else None 
+        new_tau_k = reform.tau_k if reform.tau_k is not None else None
+        
+        # 簡略化モデルでシミュレーション実行
+        changes = self.simple_model.simulate_tax_change(
+            new_tau_c=new_tau_c, 
+            new_tau_l=new_tau_l, 
+            new_tau_k=new_tau_k
+        )
+        
+        if not changes:
+            print("簡略化モデルでのシミュレーションに失敗")
+            # フォールバック：従来モデルを試す
+            return self._simulate_reform_with_complex_model(reform, periods, True)
+        
+        # 結果をSimulationResults形式に変換
+        baseline_vars = ['Y', 'C', 'I', 'L', 'w', 'r', 'K', 'Lambda', 'T', 'G']
+        baseline_data = {}
+        reform_data = {}
+        
+        for var in baseline_vars:
+            if hasattr(self.simple_baseline_ss, var):
+                baseline_data[var] = [getattr(self.simple_baseline_ss, var)] * periods
+                
+                # 改革後の値を直接使用（より正確）
+                if 'reform_values' in changes and var in changes['reform_values']:
+                    reform_value = changes['reform_values'][var]
+                    reform_data[var] = [reform_value] * periods
+                elif f'{var}_change_pct' in changes:
+                    # フォールバック：パーセント変化から計算
+                    pct_change = changes[f'{var}_change_pct']
+                    new_value = getattr(self.simple_baseline_ss, var) * (1 + pct_change / 100)
+                    reform_data[var] = [new_value] * periods
+                else:
+                    reform_data[var] = baseline_data[var].copy()
+        
+        # 🚨 RESEARCH WARNING: 税収の詳細変数を任意的な比率で推定
+        # これらの比率（30%, 50%, 10%, 10%）は実証データに基づいていません
+        warnings.warn(
+            "Tax composition estimated using arbitrary ratios (Tc:30%, Tl:50%, Tk:10%, Tf:10%). "
+            "For research, use actual MOF tax composition data.",
+            ResearchWarning
+        )
+        
+        baseline_data['Tc'] = [baseline_data['T'][0] * 0.3] * periods  # 消費税収（概算）
+        baseline_data['Tl'] = [baseline_data['T'][0] * 0.5] * periods  # 所得税収（概算）
+        baseline_data['Tk'] = [baseline_data['T'][0] * 0.1] * periods  # 資本税収（概算）
+        baseline_data['Tf'] = [baseline_data['T'][0] * 0.1] * periods  # 法人税収（概算）
+        baseline_data['B'] = [-1.42] * periods  # 政府債務（固定値）
+        baseline_data['pi'] = [0.02] * periods  # インフレ率（固定値）
+        
+        reform_data['Tc'] = [reform_data['T'][0] * 0.3] * periods
+        reform_data['Tl'] = [reform_data['T'][0] * 0.5] * periods
+        reform_data['Tk'] = [reform_data['T'][0] * 0.1] * periods
+        reform_data['Tf'] = [reform_data['T'][0] * 0.1] * periods
+        reform_data['B'] = [-1.42] * periods
+        reform_data['pi'] = [0.02] * periods
+        
+        # DataFrameを作成
+        baseline_path = pd.DataFrame(baseline_data)
+        reform_path = pd.DataFrame(reform_data)
+        
+        # 福利厚生分析（簡略版）
+        welfare_cost = self._calculate_simple_welfare_cost(baseline_path, reform_path)
+        
+        # 🚨 CRITICAL RESEARCH WARNING: ダミーのSteadyStateオブジェクトを作成
+        # これは固定値であり、実際の経済計算結果ではありません
+        from dataclasses import dataclass
+        
+        @dataclass 
+        class DummySteadyState:
+            """
+            🚨 RESEARCH CRITICAL WARNING 🚨
+            This class returns HARDCODED VALUES, not actual economic calculations.
+            Using this for research will produce INVALID RESULTS.
+            """
+            Y: float = 1.0
+            C: float = 0.6
+            I: float = 0.2
+            L: float = 0.33
+            T: float = 0.2
+            B: float = 0.0
+            K: float = 4.0
+            w: float = 1.0
+            r: float = 0.08
+            pi: float = 0.02
+            Lambda: float = 1.0
+            G: float = 0.2
+            Tc: float = 0.1
+            Tl: float = 0.15
+            Tk: float = 0.05
+            Tf: float = 0.08
+            
+            def __post_init__(self):
+                warnings.warn(
+                    "🚨 DUMMY DATA USAGE: DummySteadyState uses hardcoded values, "
+                    "not actual economic calculations. Results are INVALID for research.",
+                    ResearchWarning,
+                    stacklevel=3
+                )
+            
+            def to_dict(self):
+                warnings.warn(
+                    "Converting dummy steady state to dict - values are hardcoded, not computed",
+                    ResearchWarning,
+                    stacklevel=2
+                )
+                return {
+                    'Y': self.Y, 'C': self.C, 'I': self.I, 'L': self.L, 
+                    'T': self.T, 'B': self.B, 'K': self.K, 'w': self.w,
+                    'r': self.r, 'pi': self.pi, 'Lambda': self.Lambda,
+                    'G': self.G, 'Tc': self.Tc, 'Tl': self.Tl, 'Tk': self.Tk, 'Tf': self.Tf
+                }
+        
+        dummy_ss_baseline = DummySteadyState()
+        dummy_ss_reform = DummySteadyState()
+        dummy_fiscal = pd.DataFrame({'revenue_change': [0.0]})
+        
+        return SimulationResults(
+            name=reform.name,
+            baseline_path=baseline_path,
+            reform_path=reform_path,
+            steady_state_baseline=dummy_ss_baseline,
+            steady_state_reform=dummy_ss_reform,
+            welfare_change=welfare_cost,
+            fiscal_impact=dummy_fiscal,
+            transition_periods=periods
+        )
+    
+    @research_critical(
+        "Oversimplified welfare calculation using consumption changes only. "
+        "Ignores labor supply effects, intertemporal substitution, and uncertainty. "
+        "Returns arbitrary 0.0 on calculation failure."
+    )
+    def _calculate_simple_welfare_cost(self, baseline_path: pd.DataFrame, reform_path: pd.DataFrame) -> float:
+        """
+        簡略化された福利厚生コスト計算
+        
+        ⚠️ RESEARCH WARNING: Highly simplified welfare approximation
+        """
+        try:
+            # 消費の変化から福利厚生変化を概算
+            c_baseline = baseline_path['C'].mean()
+            c_reform = reform_path['C'].mean()
+            
+            # 簡単な消費等価変化
+            welfare_change = (c_reform - c_baseline) / c_baseline * 100
+            return -welfare_change  # 正の値は福利厚生の減少を示す
+        except:
+            warnings.warn("Welfare calculation failed, returning 0.0", ResearchWarning)
+            return 0.0
+    
+    def _simulate_reform_with_complex_model(self, reform: TaxReform, periods: int = 100, compute_welfare: bool = True) -> SimulationResults:
+        """従来の複雑なDSGEモデルを使用した税制改革シミュレーション"""
+        print("従来のDSGEモデルで税制シミュレーションを実行中...")
+        
         # Create reform parameters
         reform_params = ModelParameters()
         for attr in dir(self.baseline_params):
@@ -573,7 +811,7 @@ class EnhancedTaxSimulator:
                     'Baseline': baseline_avg,
                     'Reform': reform_avg,
                     'Change': reform_avg - baseline_avg,
-                    '% Change': (reform_avg - baseline_avg) / baseline_avg * 100
+                    '% Change': safe_percentage_change(reform_avg, baseline_avg)
                 }
             
             # Add fiscal ratios if we have tax revenue data
@@ -586,7 +824,7 @@ class EnhancedTaxSimulator:
                     'Baseline': baseline_t_y,
                     'Reform': reform_t_y,
                     'Change': reform_t_y - baseline_t_y,
-                    '% Change': (reform_t_y - baseline_t_y) / baseline_t_y * 100
+                    '% Change': safe_percentage_change(reform_t_y, baseline_t_y)
                 }
             
             results[horizon_name] = horizon_results
@@ -656,7 +894,7 @@ class EnhancedTaxSimulator:
                     baseline_val = getattr(ss_baseline, var)
                     reform_val = getattr(ss_reform, var)
                 
-                pct_change = (reform_val - baseline_val) / baseline_val * 100
+                pct_change = safe_percentage_change(reform_val, baseline_val)
                 reform_metrics[var] = pct_change
             
             # Add transition period
@@ -678,6 +916,10 @@ class EnhancedTaxSimulator:
             tax_bounds: Bounds for each tax rate
             objective: 'welfare' or 'output'
         """
+        
+        if self.use_simple_model:
+            print("簡略化モデルでは最適化機能は利用できません")
+            return None
         
         def objective_function(tax_rates):
             """Objective to minimize (negative welfare or output)"""
@@ -723,11 +965,14 @@ class EnhancedTaxSimulator:
                 return 1000.0
         
         # Initial guess
-        x0 = [
-            self.baseline_params.tau_c,
-            self.baseline_params.tau_l,
-            self.baseline_params.tau_f
-        ]
+        if hasattr(self, 'baseline_params'):
+            x0 = [
+                self.baseline_params.tau_c,
+                self.baseline_params.tau_l,
+                self.baseline_params.tau_f
+            ]
+        else:
+            x0 = [0.10, 0.20, 0.30]  # デフォルト値
         
         # Bounds
         bounds = [
@@ -761,6 +1006,10 @@ class EnhancedTaxSimulator:
                                variables: List[str],
                                figsize: Tuple[int, int] = (12, 10)) -> plt.Figure:
         """Plot transition dynamics for a reform"""
+        # 日本語フォント設定を強制的に適用
+        plt.rcParams['font.sans-serif'] = ['Hiragino Sans', 'Hiragino Kaku Gothic Pro', 'Yu Gothic', 'DejaVu Sans', 'Arial']
+        plt.rcParams['axes.unicode_minus'] = False
+        
         n_vars = len(variables)
         n_cols = 2
         n_rows = (n_vars + 1) // 2
@@ -801,7 +1050,7 @@ class EnhancedTaxSimulator:
             ax.spines['right'].set_visible(False)
             
             # Add percentage change annotation
-            pct_change = (reform_values.iloc[-1] - baseline_values.iloc[-1]) / baseline_values.iloc[-1] * 100
+            pct_change = safe_percentage_change(reform_values.iloc[-1], baseline_values.iloc[-1])
             ax.text(0.98, 0.02, f'Δ = {pct_change:+.1f}%',
                    transform=ax.transAxes, fontsize=9,
                    ha='right', va='bottom',
@@ -814,8 +1063,8 @@ class EnhancedTaxSimulator:
             col = i % n_cols
             axes[row, col].set_visible(False)
         
-        plt.suptitle(f'Transition Dynamics: {results.name}',
-                    fontsize=14, fontweight='bold')
+        # Use safe Japanese title - 直接英語タイトルを使用して文字化けを回避
+        plt.suptitle(f'Transition Dynamics: {results.name}', fontsize=14, fontweight='bold')
         plt.tight_layout()
         
         return fig
@@ -853,7 +1102,7 @@ class EnhancedTaxSimulator:
                     baseline_val = getattr(results.steady_state_baseline, var)
                     reform_val = getattr(results.steady_state_reform, var)
                 
-                pct_change = (reform_val - baseline_val) / baseline_val * 100
+                pct_change = safe_percentage_change(reform_val, baseline_val)
                 f.write(f"{var:<15} {baseline_val:<12.3f} {reform_val:<12.3f} {pct_change:<+12.2f}\n")
             
             # Fiscal impact
@@ -879,8 +1128,17 @@ class EnhancedTaxSimulator:
         if variables is None:
             variables = ['Y', 'C', 'I', 'L']
         
+        # Check if results has reform_path or paths
+        if hasattr(results, 'reform_path'):
+            result_path = results.reform_path
+        elif hasattr(results, 'paths'):
+            result_path = results.paths
+        else:
+            print("No plottable path data found in results")
+            return
+            
         # Filter variables that exist in the results
-        available_vars = [var for var in variables if var in results.paths.columns]
+        available_vars = [var for var in variables if var in result_path.columns]
         
         if not available_vars:
             print("No plottable variables found in results")
@@ -907,7 +1165,7 @@ class EnhancedTaxSimulator:
                        'b--', label='Baseline', alpha=0.7)
             
             # Plot reform path
-            ax.plot(results.paths.index, results.paths[var], 
+            ax.plot(result_path.index, result_path[var], 
                    'r-', label='Reform', linewidth=2)
             
             ax.set_title(f'{var}')

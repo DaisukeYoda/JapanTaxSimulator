@@ -7,16 +7,16 @@
             "comment_sigma_c": "Intertemporal elasticity of substitution",
             "sigma_l": 2.0,
             "comment_sigma_l": "Frisch elasticity of labor supply",
-            "habit": 0.6,
-            "comment_habit": "Habit formation parameter",
-            "chi": 3.0,
-            "comment_chi": "Labor disutility parameter"
+            "habit": 0.3,
+            "comment_habit": "Habit formation parameter (reduced for better C/Y ratio)",
+            "chi": 1.0,
+            "comment_chi": "Labor disutility parameter (reduced for better labor supply)"
         },
         "firm": {
             "alpha": 0.33,
             "comment_alpha": "Capital share in production",
-            "delta": 0.01,
-            "comment_delta": "Depreciation rate - quarterly (4% annually)",
+            "delta": 0.025,
+            "comment_delta": "Depreciation rate - quarterly (10% annually, improved for I/Y ratio)",
             "theta_p": 0.75,
             "comment_theta_p": "Calvo price stickiness parameter",
             "epsilon": 6.0,

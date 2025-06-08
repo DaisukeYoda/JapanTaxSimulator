@@ -167,3 +167,125 @@ Always verify:
 - **data/**: Supporting data files (if any)
 
 The model is designed for policy analysis, so prioritize economic interpretability and robustness over computational speed. Always validate results against economic intuition and existing literature.
+
+# CRITICAL ACADEMIC RESEARCH REQUIREMENTS
+
+**⚠️ WARNING: This is a RESEARCH CODEBASE for academic and policy analysis.**
+
+## Academic Integrity Requirements (MANDATORY)
+
+### 1. NO DUMMY VALUES OR FALLBACKS
+- **NEVER** use placeholder values (0.0, 1.0, etc.) when real data is unavailable
+- **NEVER** return fallback results when models fail to converge
+- **NEVER** create "DummySteadyState" or similar placeholder objects
+- **NEVER** estimate tax breakdowns without empirical data sources
+
+### 2. FAIL FAST AND EXPLICIT
+```python
+# ✅ CORRECT: Explicit failure
+if convergence_failed:
+    raise ConvergenceError("Model failed to converge. Check parameter bounds and fiscal sustainability.")
+
+# ❌ WRONG: Silent fallback
+if convergence_failed:
+    return default_steady_state  # DANGEROUS for research
+```
+
+### 3. DATA SOURCE REQUIREMENTS
+- All parameters must cite specific empirical sources
+- Tax data: Ministry of Finance Annual Reports
+- Macro data: Cabinet Office National Accounts  
+- Behavioral parameters: Published academic estimates with citations
+
+### 4. EXPLICIT ASSUMPTION DOCUMENTATION
+```python
+def compute_tax_elasticity(self):
+    """
+    Computes tax elasticity using:
+    - Labor supply elasticity: 2.0 (Keane & Rogerson, 2012)  
+    - Consumption elasticity: 1.5 (Ogaki & Reinhart, 1998)
+    
+    WARNING: Results sensitive to these parameter values.
+    Conduct sensitivity analysis before policy conclusions.
+    """
+```
+
+### 5. UNCERTAINTY AND ROBUSTNESS
+- Provide confidence intervals for all estimates
+- Conduct sensitivity analysis for key parameters
+- Report model limitations explicitly
+- Validate against empirical benchmarks
+
+## Prohibited Practices in Research Code
+
+### ❌ NEVER DO THIS:
+```python
+# Silent failure handling
+try:
+    result = complex_computation()
+except:
+    return 0.0  # DANGEROUS
+
+# Dummy data creation  
+baseline_data['Tc'] = [total_tax * 0.3] * periods  # Arbitrary assumption
+
+# Hidden assumptions
+welfare_change = 0.0  # Default when calculation fails
+```
+
+### ✅ REQUIRED APPROACH:
+```python
+# Explicit failure with diagnostic information
+def compute_steady_state(self, max_iterations=1000, tolerance=1e-8):
+    """
+    Returns: SteadyState object with empirically grounded values
+    Raises: ConvergenceError with detailed diagnostic information
+    """
+    for i in range(max_iterations):
+        if converged:
+            return self._validate_steady_state(result)
+    
+    raise ConvergenceError(
+        f"Failed to converge after {max_iterations} iterations. "
+        f"Final residual: {residual:.2e}. "
+        f"Check: 1) Parameter bounds, 2) Fiscal sustainability, 3) BK conditions"
+    )
+
+# Empirically grounded data only
+def get_tax_composition(self, data_year: int, source: str):
+    """
+    Args:
+        data_year: Year of fiscal data (e.g., 2019)
+        source: "MOF_Annual_Report" or specific empirical source
+    
+    Raises: 
+        NotImplementedError if empirical data not available
+        ValueError if data_year not in valid range
+    """
+    if source not in self.validated_sources:
+        raise NotImplementedError(f"Tax composition requires empirical data from {source}")
+```
+
+## Research Quality Checklist
+
+Before any analysis, verify:
+
+- [ ] All parameters have empirical citations
+- [ ] Model convergence is verified (no silent failures)
+- [ ] Steady state ratios match Japanese data
+- [ ] Blanchard-Kahn conditions satisfied
+- [ ] Sensitivity analysis conducted
+- [ ] Results validated against literature
+- [ ] Uncertainty bounds provided
+- [ ] Limitations clearly stated
+
+## Error Handling Philosophy
+
+**Research Principle**: Better to have no result than a wrong result that could influence policy or academic conclusions.
+
+- **Computational errors**: Stop execution with diagnostic information
+- **Data availability**: Explicit error, suggest empirical data sources  
+- **Model failures**: Detailed convergence diagnostics, parameter suggestions
+- **Assumption violations**: Clear warnings with literature citations
+
+Remember: Academic and policy credibility depends on rigorous methodology, not just working code.
