@@ -160,6 +160,11 @@ class NotebookValidator:
             params = ModelParameters.from_json('config/parameters.json')
             model = DSGEModel(params)
             
+            # 定常状態を計算（必須）
+            steady_state = model.compute_steady_state()
+            if steady_state is None:
+                raise RuntimeError("定常状態の計算に失敗")
+            
             # DummySteadyState検出テスト
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always")
@@ -238,6 +243,12 @@ class NotebookValidator:
                 # 基本モデル作成
                 params = ModelParameters.from_json('config/parameters.json')
                 model = DSGEModel(params)
+                
+                # 定常状態を計算（必須）
+                steady_state = model.compute_steady_state()
+                if steady_state is None:
+                    raise RuntimeError("定常状態の計算に失敗")
+                    
                 simulator = EnhancedTaxSimulator(model)
                 
                 # エラーシナリオ実行
@@ -282,6 +293,11 @@ class NotebookValidator:
         try:
             params = ModelParameters.from_json('config/parameters.json')
             model = DSGEModel(params)
+            
+            # 定常状態を計算（必須）
+            steady_state = model.compute_steady_state()
+            if steady_state is None:
+                raise RuntimeError("定常状態の計算に失敗")
             
             # 異なるモードでのパフォーマンス比較
             performance_data = {}
@@ -336,6 +352,11 @@ class NotebookValidator:
         try:
             params = ModelParameters.from_json('config/parameters.json')
             model = DSGEModel(params)
+            
+            # 定常状態を計算（必須）
+            steady_state = model.compute_steady_state()
+            if steady_state is None:
+                raise RuntimeError("定常状態の計算に失敗")
             
             # 異なる設定でのAPI一貫性確認
             api_tests = [

@@ -243,6 +243,8 @@ class LinearizationMethodComparator:
     
     def _compute_transition_path_full(self, linear_model, reform: TaxReform, periods: int) -> pd.DataFrame:
         """完全線形化による遷移パスの計算"""
+        # TODO: 完全実装が必要 - 現在は簡略化実装
+        # 将来的にはKlein解法による正確な遷移パス計算に置き換える
         # 簡略化実装: 定常状態の違いから線形補間
         baseline_vars = ['Y', 'C', 'I', 'L', 'K', 'w', 'r', 'pi', 'T']
         transition_data = {}
