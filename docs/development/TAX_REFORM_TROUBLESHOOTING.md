@@ -298,5 +298,5 @@ for result in results:
 ---
 
 **更新履歴**
-- 2024年12月3日: Issue #6解決を受けて初版作成
+- 2025年6月: Issue #6解決を受けて初版作成
 - 技術担当: Daisuke Yoda

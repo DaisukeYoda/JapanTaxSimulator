@@ -73,23 +73,24 @@
 ```
 JapanTaxSimulator/
 ├── README.md                          # このファイル
-├── requirements.txt                   # 依存パッケージ
+├── pyproject.toml                     # uv依存管理・プロジェクト設定
 ├── config/
 │   └── parameters.json               # モデルパラメータ設定
-├── src/
-│   ├── __init__.py
-│   ├── dsge_model.py                # 基本DSGEモデル実装
+├── src/                              # ソースコード
+│   ├── dsge_model.py                 # 基本DSGEモデル実装
+│   ├── tax_simulator.py             # 税制シミュレーター
 │   ├── linearization.py             # 線形化モジュール
-│   ├── linearization_improved.py    # 改良版線形化
-│   └── tax_simulator.py             # 税制シミュレーター
-├── notebooks/
-│   ├── tax_simulation_demo.ipynb    # 基本デモ
-│   └── advanced_tax_simulation_demo.ipynb  # 高度な分析デモ
-├── data/                             # データファイル
-├── results/                          # 出力結果
-├── test_model.py                     # モデルテスト
-└── quick_check.py                    # クイックチェック
+│   ├── simulation/                  # シミュレーションエンジン
+│   ├── analysis/                    # 経済分析モジュール
+│   └── utils_new/                   # ユーティリティ
+├── notebooks/                        # Jupyter notebook デモ
+├── tests/                           # テストスイート
+├── docs/                           # ドキュメント
+├── data/                           # データファイル
+├── results/                        # シミュレーション結果
+└── quick_check.py                  # クイック動作確認
 ```
+
 
 ## 💻 インストールと実行
 
@@ -118,18 +119,16 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ### 基本的な使用例
 
-#### Python スクリプトでの実行
-
 ```python
 from src.dsge_model import DSGEModel, ModelParameters
-from src.tax_simulator import TaxPolicySimulator, TaxReform
+from src.tax_simulator import EnhancedTaxSimulator, TaxReform
 
 # モデルの初期化
-params = ModelParameters()
+params = ModelParameters.from_json('config/parameters.json')
 model = DSGEModel(params)
 
 # シミュレーターの作成
-simulator = TaxPolicySimulator(model)
+simulator = EnhancedTaxSimulator(model)
 
 # 消費税5%ポイント引き上げシナリオ
 reform = TaxReform(
@@ -141,8 +140,9 @@ reform = TaxReform(
 # シミュレーション実行
 results = simulator.simulate_reform(reform, periods=40)
 
-# 結果の可視化
-simulator.plot_results(results)
+# 結果の表示
+print(f"厚生変化: {results.welfare_change:.2%}")
+print(f"GDP影響: {results.summary_statistics()['Y']['peak_impact']:.2%}")
 ```
 
 #### Jupyter Notebookでの実行
@@ -266,14 +266,6 @@ custom_reform = TaxReform(
 - 消費税増税時（1989年、1997年、2014年、2019年）の実績データとの比較
 - 他のDSGEモデル（内閣府、日本銀行モデル）との結果比較
 
-## 🚀 将来の拡張計画
-
-- [ ] 開放経済モデルへの拡張（輸出入、為替レート）
-- [ ] 異質的家計の導入（所得分布の考慮）
-- [ ] 金融摩擦の追加（銀行部門、信用制約）
-- [ ] 人口動態の考慮（少子高齢化の影響）
-- [ ] 不確実性・学習の導入
-- [ ] リアルタイムデータとの連携
 
 ## 📖 参考文献
 
@@ -305,7 +297,7 @@ custom_reform = TaxReform(
 
 ## 📧 連絡先
 
-質問やフィードバックがございましたら、お気軽にお問い合わせください。
+質問やフィードバックがございましたら、GitHub Issuesでお気軽にお問い合わせください。
 
 ---
 
