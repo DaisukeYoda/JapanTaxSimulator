@@ -144,24 +144,39 @@ class RevenueCalculator:
     def _calculate_period_revenue(self, economic_vars: pd.Series, 
                                 tax_params: ModelParameters, period: int) -> Dict[str, float]:
         """Calculate revenue for a single period."""
-        # Extract economic variables
+        # Extract required economic variables
+        self._validate_required_variables(economic_vars, period)
+        
         Y = economic_vars['Y']
         C = economic_vars['C']
-        I = economic_vars.get('I', 0.2 * Y)  # Default if missing
-        L = economic_vars.get('L', 0.33)     # Default if missing
         
-        # Wage calculation (if not provided)
+        # Handle potentially missing economic variables with explicit warnings
+        I = self._get_variable_with_validation(economic_vars, 'I', 0.2 * Y, 
+                                             f"Investment (I) missing for period {period}, using default I/Y=0.2")
+        L = self._get_variable_with_validation(economic_vars, 'L', 0.33, 
+                                             f"Labor (L) missing for period {period}, using default L=0.33")
+        
+        # Wage calculation with validation
         if 'w' in economic_vars:
             w = economic_vars['w']
         else:
-            # Approximate wage from labor productivity
             w = 0.65 * Y / L if L > 0 else 1.0
+            warnings.warn(
+                f"Wage (w) missing for period {period}. Computing from labor productivity: w = 0.65*Y/L = {w:.4f}. "
+                f"For research use, provide actual wage data.",
+                ResearchWarning
+            )
         
-        # Capital stock (if not provided)
+        # Capital stock with validation
         if 'K' in economic_vars:
             K = economic_vars['K']
         else:
-            K = 10.0 * Y  # Default capital-output ratio
+            K = 10.0 * Y
+            warnings.warn(
+                f"Capital stock (K) missing for period {period}. Using default K/Y=10.0, K = {K:.4f}. "
+                f"For research use, provide actual capital stock data.",
+                ResearchWarning
+            )
         
         # Tax revenue calculations
         tau_c_revenue = tax_params.tau_c * C
@@ -221,6 +236,35 @@ class RevenueCalculator:
         )
         
         return adjusted_df
+    
+    def _validate_required_variables(self, economic_vars: pd.Series, period: int):
+        """Validate that critical economic variables are present."""
+        required_vars = ['Y', 'C']
+        missing_vars = [var for var in required_vars if var not in economic_vars or pd.isna(economic_vars[var])]
+        
+        if missing_vars:
+            raise ValueError(
+                f"Critical economic variables missing for period {period}: {missing_vars}. "
+                f"Cannot compute fiscal impact without GDP (Y) and Consumption (C)."
+            )
+    
+    def _get_variable_with_validation(self, economic_vars: pd.Series, var_name: str, 
+                                    default_value: float, warning_message: str) -> float:
+        """
+        Get economic variable with explicit validation and warning for missing data.
+        
+        For research use, missing data should be explicitly handled rather than
+        silently substituted with defaults.
+        """
+        if var_name in economic_vars and not pd.isna(economic_vars[var_name]):
+            return economic_vars[var_name]
+        else:
+            warnings.warn(
+                f"RESEARCH WARNING: {warning_message} "
+                f"This may affect fiscal impact accuracy. Consider providing complete economic data.",
+                ResearchWarning
+            )
+            return default_value
 
 
 class DebtSustainabilityAnalyzer:

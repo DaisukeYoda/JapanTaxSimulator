@@ -442,9 +442,21 @@ class WelfareAnalyzer:
         for _ in range(n_bootstrap):
             # Resample paths (block bootstrap to preserve time structure)
             n_periods = len(baseline_path)
-            block_size = min(8, n_periods // 4)  # Quarterly blocks
             
-            bootstrap_indices = self._block_bootstrap_indices(n_periods, block_size)
+            # Handle edge cases for small sample sizes
+            if n_periods < 4:
+                warnings.warn(
+                    f"Sample size too small for block bootstrap (n={n_periods}). "
+                    f"Using simple bootstrap instead. For reliable confidence intervals, "
+                    f"use at least 16 periods.",
+                    ResearchWarning
+                )
+                # Use simple bootstrap for very small samples
+                bootstrap_indices = np.random.choice(n_periods, size=n_periods, replace=True)
+            else:
+                # Use block bootstrap for larger samples
+                block_size = max(1, min(8, n_periods // 4))  # Ensure block_size >= 1
+                bootstrap_indices = self._block_bootstrap_indices(n_periods, block_size)
             
             bootstrap_baseline = baseline_path.iloc[bootstrap_indices]
             bootstrap_reform = reform_path.iloc[bootstrap_indices]
@@ -465,13 +477,33 @@ class WelfareAnalyzer:
         return (ci_lower, ci_upper)
     
     def _block_bootstrap_indices(self, n_periods: int, block_size: int) -> List[int]:
-        """Generate block bootstrap indices."""
+        """
+        Generate block bootstrap indices with robust edge case handling.
+        
+        Args:
+            n_periods: Total number of periods
+            block_size: Size of each block (must be >= 1)
+            
+        Returns:
+            List of indices for bootstrap sample
+        """
+        if block_size <= 0:
+            raise ValueError(f"block_size must be positive, got {block_size}")
+        if n_periods <= 0:
+            raise ValueError(f"n_periods must be positive, got {n_periods}")
+        
+        # Handle case where block_size >= n_periods
+        if block_size >= n_periods:
+            # Just return a random permutation
+            return np.random.permutation(n_periods).tolist()
+        
         indices = []
         current_pos = 0
         
         while current_pos < n_periods:
-            # Random starting point for block
-            start = np.random.randint(0, n_periods - block_size + 1)
+            # Random starting point for block (ensure valid range)
+            max_start = max(0, n_periods - block_size)
+            start = np.random.randint(0, max_start + 1)
             
             # Add block indices
             for i in range(block_size):

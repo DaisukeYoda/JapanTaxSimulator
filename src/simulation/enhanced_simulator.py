@@ -100,9 +100,19 @@ class LinearizationManager:
             return False
     
     def _setup_simple_linearization(self):
-        """Set up simple linearization method."""
-        print("✅ Setting up simple linearization (demo/educational)")
+        """
+        Set up simple linearization method.
+        
+        IMPORTANT: This is an ad-hoc linear system with hardcoded coefficients,
+        NOT derived from the DSGE model equations. Suitable for demonstrations
+        and educational purposes, but NOT for research use.
+        
+        For research applications, use method='klein' to ensure the dynamics
+        are properly derived from the underlying economic model.
+        """
+        print("✅ Setting up simple linearization (demo/educational - NOT DSGE-derived)")
         # Create simple linear system with fixed coefficients
+        # WARNING: These are NOT derived from the DSGE model structure
         
         # Simple linear system: x_t = A * x_{t-1} + B * shock_t
         # where x = [Y, C, I, L]
@@ -215,10 +225,24 @@ class TransitionComputer:
     def _compute_klein_transition(self, tax_changes: Dict[str, float],
                                 baseline_values: Dict[str, float], 
                                 periods: int) -> Dict[str, List[float]]:
-        """Compute transition using Klein linearization."""
+        """Compute transition using Klein linearization with actual DSGE solution matrices."""
         try:
-            # This would use the actual Klein solution matrices
-            # For now, implement a reasonable approximation
+            # Use actual Klein solution matrices P and Q from linearization
+            if hasattr(self.linear_model, 'P_matrix') and hasattr(self.linear_model, 'Q_matrix'):
+                P = self.linear_model.P_matrix
+                Q = self.linear_model.Q_matrix
+                
+                if P is not None and Q is not None:
+                    return self._compute_matrix_based_transition(
+                        P, Q, tax_changes, baseline_values, periods
+                    )
+            
+            # If matrices not available, fall back with warning
+            warnings.warn(
+                "Klein solution matrices (P, Q) not available. Using approximation. "
+                "For research use, ensure Klein linearization completed successfully.",
+                ResearchWarning
+            )
             return self._compute_approximate_transition(
                 sum(abs(change) for change in tax_changes.values()),
                 baseline_values, periods, method='klein'
@@ -283,6 +307,112 @@ class TransitionComputer:
             transition_data[var] = path
         
         return transition_data
+    
+    def _compute_matrix_based_transition(self, P: np.ndarray, Q: np.ndarray,
+                                       tax_changes: Dict[str, float],
+                                       baseline_values: Dict[str, float],
+                                       periods: int) -> Dict[str, List[float]]:
+        """
+        Compute transition dynamics using actual Klein solution matrices.
+        
+        Uses the DSGE model's solved state space representation:
+        x_t = P * x_{t-1} + Q * shock_t
+        
+        Args:
+            P: State transition matrix from Klein solution
+            Q: Shock response matrix from Klein solution  
+            tax_changes: Dictionary of tax rate changes
+            baseline_values: Steady state baseline values
+            periods: Number of simulation periods
+            
+        Returns:
+            Dictionary with transition paths for each variable
+        """
+        # Map variable names to state vector indices
+        # This mapping should match the linearization variable ordering
+        var_mapping = self._get_variable_mapping()
+        n_vars = len(var_mapping)
+        
+        # Construct tax shock vector
+        shock_vector = self._construct_tax_shock(tax_changes, Q.shape[1])
+        
+        # Initialize state vector (deviations from steady state)
+        state_vector = np.zeros(P.shape[0])
+        
+        # Store transition paths
+        transition_data = {}
+        for var in baseline_values.keys():
+            transition_data[var] = []
+        
+        # Simulate transition dynamics
+        for t in range(periods):
+            # Apply shock only in first period for permanent reform
+            current_shock = shock_vector if t == 0 else np.zeros_like(shock_vector)
+            
+            # Update state: x_t = P * x_{t-1} + Q * shock_t
+            state_vector = P @ state_vector + Q @ current_shock
+            
+            # Convert state deviations back to levels
+            for var_name, baseline_value in baseline_values.items():
+                if var_name in var_mapping:
+                    idx = var_mapping[var_name]
+                    if idx < len(state_vector):
+                        # Convert log-deviation to level
+                        level_value = baseline_value * (1 + state_vector[idx])
+                        # Ensure non-negative values
+                        level_value = max(level_value, 0.01 * baseline_value)
+                        transition_data[var_name].append(level_value)
+                    else:
+                        # Variable not in state vector, use baseline
+                        transition_data[var_name].append(baseline_value)
+                else:
+                    # Variable not modeled, use baseline with small decay
+                    decay_factor = 0.95 ** t
+                    transition_data[var_name].append(baseline_value * decay_factor)
+        
+        return transition_data
+    
+    def _get_variable_mapping(self) -> Dict[str, int]:
+        """Get mapping from variable names to state vector indices."""
+        # Standard DSGE variable ordering (should match linearization)
+        # This needs to be consistent with the linearization implementation
+        return {
+            'Y': 0,  # Output
+            'C': 1,  # Consumption  
+            'I': 2,  # Investment
+            'L': 3,  # Labor
+            'K': 4,  # Capital
+            'G': 5   # Government spending
+        }
+    
+    def _construct_tax_shock(self, tax_changes: Dict[str, float], n_shocks: int) -> np.ndarray:
+        """
+        Construct shock vector for tax changes.
+        
+        Maps tax rate changes to structural shocks in the linearized model.
+        """
+        shock_vector = np.zeros(n_shocks)
+        
+        # Map tax changes to shock indices
+        # This mapping should correspond to the shock ordering in linearization
+        tax_shock_mapping = {
+            'tau_c': 0,  # Consumption tax shock
+            'tau_l': 1,  # Labor tax shock  
+            'tau_k': 2,  # Capital tax shock
+            'tau_f': 3   # Corporate tax shock
+        }
+        
+        # Fill shock vector based on tax changes
+        for tax_type, change in tax_changes.items():
+            if tax_type in tax_shock_mapping and tax_shock_mapping[tax_type] < n_shocks:
+                shock_vector[tax_shock_mapping[tax_type]] = change
+        
+        # If no specific mapping, use first shock as aggregate tax change
+        if np.allclose(shock_vector, 0) and tax_changes:
+            total_change = sum(abs(change) for change in tax_changes.values())
+            shock_vector[0] = total_change * np.sign(sum(tax_changes.values()))
+        
+        return shock_vector
     
     def compute_temporary_transition(self, tax_changes: Dict[str, float],
                                    periods: int, duration: int) -> pd.DataFrame:
