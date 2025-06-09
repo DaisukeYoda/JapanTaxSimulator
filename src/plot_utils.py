@@ -10,95 +10,112 @@ import os
 def setup_japanese_fonts():
     """
     Setup Japanese fonts for matplotlib on different platforms
+    Suppress warnings and provide robust fallback
     """
-    # Get available fonts with detailed information
-    available_fonts = [f.name for f in fm.fontManager.ttflist]
-    available_fonts_set = set(available_fonts)
-    
-    # Debug: Print some available fonts
-    print(f"デバッグ: 利用可能フォント数 {len(available_fonts)}")
-    hiragino_fonts = [f for f in available_fonts if 'Hiragino' in f]
-    if hiragino_fonts:
-        print(f"デバッグ: Hiraginoフォント: {hiragino_fonts[:3]}")
-    
-    # Define Japanese font candidates (in order of preference)
-    japanese_font_candidates = [
-        'Hiragino Sans',           # macOS
-        'Hiragino Kaku Gothic Pro', # macOS  
-        'Yu Gothic',               # Windows/macOS
-        'Meiryo',                  # Windows
-        'MS Gothic',               # Windows
-        'Takao Gothic',            # Linux
-        'IPAexGothic',             # Linux
-        'Noto Sans CJK JP',        # Cross-platform
-        'DejaVu Sans'              # Fallback
-    ]
-    
-    # Find the first available Japanese font
-    selected_font = None
-    for font in japanese_font_candidates:
-        if font in available_fonts_set:
-            selected_font = font
-            print(f"デバッグ: フォント '{font}' を発見しました")
-            break
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        
+        # Get available fonts with detailed information
+        available_fonts = [f.name for f in fm.fontManager.ttflist]
+        available_fonts_set = set(available_fonts)
+        
+        # Define Japanese font candidates (in order of preference)
+        japanese_font_candidates = [
+            'Hiragino Sans',           # macOS - best choice
+            'Hiragino Kaku Gothic Pro', # macOS  
+            'Yu Gothic',               # Windows/macOS
+            'Meiryo',                  # Windows
+            'MS Gothic',               # Windows
+            'Takao Gothic',            # Linux
+            'IPAexGothic',             # Linux
+            'Noto Sans CJK JP',        # Cross-platform
+        ]
+        
+        # Find the first available Japanese font
+        selected_font = None
+        for font in japanese_font_candidates:
+            if font in available_fonts_set:
+                selected_font = font
+                break
+        
+        if selected_font:
+            # Force clear font cache first
+            try:
+                import matplotlib
+                matplotlib.font_manager._rebuild()
+            except:
+                pass
+            
+            # Set matplotlib font parameters with forced configuration
+            plt.rcParams.update({
+                'font.family': 'sans-serif',
+                'font.sans-serif': [selected_font, 'DejaVu Sans', 'Arial'],
+                'font.serif': [selected_font, 'Times New Roman'],
+                'font.monospace': ['Courier New', 'DejaVu Sans Mono'],
+                'axes.unicode_minus': False,
+                'font.size': 12,
+                'axes.titlesize': 14,
+                'axes.labelsize': 12
+            })
+            
+            # Force font manager to reload
+            try:
+                fm.fontManager.__init__()
+                fm._rebuild()
+            except:
+                pass
+            
+            print(f"✅ 日本語フォント強制設定: {selected_font}")
+            return selected_font
         else:
-            print(f"デバッグ: フォント '{font}' は利用できません")
-    
-    # Force use Hiragino Sans if on macOS and available
-    if not selected_font and 'Hiragino Sans' in available_fonts_set:
-        selected_font = 'Hiragino Sans'
-        print("デバッグ: Hiragino Sansを強制使用")
-    
-    if selected_font:
-        print(f"✅ 日本語フォント使用: {selected_font}")
-        # Set matplotlib font parameters with forced configuration
-        plt.rcParams['font.family'] = 'sans-serif'
-        plt.rcParams['font.sans-serif'] = [selected_font, 'DejaVu Sans', 'Arial']
-        
-        # Ensure negative sign displays correctly  
-        plt.rcParams['axes.unicode_minus'] = False
-        
-        # Clear font cache to ensure changes take effect
-        fm.fontManager.__init__()
-        
-        return selected_font
-    else:
-        print("⚠️ 日本語フォントが見つかりません。デフォルトフォントを使用")
-        print("利用可能フォント（先頭10個）:", available_fonts[:10])
-        return None
+            # Fallback: Use DejaVu Sans but configure it properly
+            plt.rcParams['font.family'] = 'sans-serif'
+            plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial']
+            plt.rcParams['axes.unicode_minus'] = False
+            print("⚠️ 日本語フォント未検出。DejaVuフォント使用")
+            return 'DejaVu Sans'
 
 
 def setup_plotting_style():
     """
     Setup consistent plotting style for the project
     """
-    # Setup Japanese fonts first
-    font_name = setup_japanese_fonts()
-    
-    # Set style parameters
-    plt.style.use('default')  # Use default instead of seaborn to avoid warnings
-    
-    # Figure and font settings
-    plt.rcParams['figure.figsize'] = (12, 8)
-    plt.rcParams['font.size'] = 12
-    plt.rcParams['axes.titlesize'] = 14
-    plt.rcParams['axes.labelsize'] = 12
-    plt.rcParams['xtick.labelsize'] = 10
-    plt.rcParams['ytick.labelsize'] = 10
-    plt.rcParams['legend.fontsize'] = 11
-    
-    # Grid and spines
-    plt.rcParams['axes.grid'] = True
-    plt.rcParams['grid.alpha'] = 0.3
-    plt.rcParams['axes.spines.top'] = False
-    plt.rcParams['axes.spines.right'] = False
-    
-    # Colors
-    plt.rcParams['axes.prop_cycle'] = plt.cycler(
-        'color', ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', 
-                 '#9467bd', '#8c564b', '#e377c2', '#7f7f7f']
-    )
-    
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        
+        # Setup Japanese fonts first
+        font_name = setup_japanese_fonts()
+        
+        # Set style parameters
+        plt.style.use('default')  # Use default instead of seaborn to avoid warnings
+        
+        # Figure and font settings
+        plt.rcParams['figure.figsize'] = (12, 8)
+        plt.rcParams['font.size'] = 12
+        plt.rcParams['axes.titlesize'] = 14
+        plt.rcParams['axes.labelsize'] = 12
+        plt.rcParams['xtick.labelsize'] = 10
+        plt.rcParams['ytick.labelsize'] = 10
+        plt.rcParams['legend.fontsize'] = 11
+        
+        # Grid and spines
+        plt.rcParams['axes.grid'] = True
+        plt.rcParams['grid.alpha'] = 0.3
+        plt.rcParams['axes.spines.top'] = False
+        plt.rcParams['axes.spines.right'] = False
+        
+        # Colors
+        plt.rcParams['axes.prop_cycle'] = plt.cycler(
+            'color', ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', 
+                     '#9467bd', '#8c564b', '#e377c2', '#7f7f7f']
+        )
+        
+        # Additional settings to suppress font warnings
+        plt.rcParams['font.weight'] = 'normal'
+        plt.rcParams['mathtext.default'] = 'regular'
+        
     return font_name
 
 
