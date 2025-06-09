@@ -44,7 +44,7 @@ class NotebookTemplate:
                     "\n",
                     "# 共通インフラの読み込み\n",
                     "from notebooks.common import (\n",
-                    "    NotebookEnvironment,\n",
+                    "    setup_notebook_environment,\n",
                     "    load_baseline_model,\n",
                     "    create_research_simulator,\n",
                     "    validate_research_compliance,\n",
@@ -55,11 +55,12 @@ class NotebookTemplate:
                     "NOTEBOOK_NAME = \"{notebook_name}\"\n",
                     "RESEARCH_MODE = {research_mode}  # 研究グレード要求\n",
                     "\n",
-                    "env = NotebookEnvironment(NOTEBOOK_NAME, research_mode=RESEARCH_MODE)\n",
-                    "env_info = env.setup_environment()\n",
+                    "# 環境をセットアップ\n",
+                    "project_root = setup_notebook_environment(NOTEBOOK_NAME)\n",
                     "\n",
                     "print(f\"🚀 {NOTEBOOK_NAME} 初期化完了\")\n",
-                    "print(f\"研究モード: {'有効' if RESEARCH_MODE else '無効'}\")"
+                    "print(f\"研究モード: {'有効' if RESEARCH_MODE else '無効'}\")\n",
+                    "print(f\"プロジェクトルート: {project_root}\")"
                 ]
             },
             {
