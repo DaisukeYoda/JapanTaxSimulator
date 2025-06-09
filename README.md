@@ -74,57 +74,23 @@
 JapanTaxSimulator/
 ├── README.md                          # このファイル
 ├── pyproject.toml                     # uv依存管理・プロジェクト設定
-├── CLAUDE.md                          # Claude Code開発ガイド
 ├── config/
 │   └── parameters.json               # モデルパラメータ設定
-├── src/                              # 🆕 モジュラーアーキテクチャ
+├── src/                              # ソースコード
 │   ├── dsge_model.py                 # 基本DSGEモデル実装
+│   ├── tax_simulator.py             # 税制シミュレーター
 │   ├── linearization.py             # 線形化モジュール
-│   ├── linearization_improved.py    # Klein線形化（研究用）
-│   ├── tax_simulator.py             # 🔄 後方互換性ファサード
-│   ├── simulation/                  # 🆕 シミュレーションエンジン
-│   │   ├── base_simulator.py        #   - 基本シミュレーション基盤
-│   │   └── enhanced_simulator.py    #   - 高度なDSGEシミュレーション
-│   ├── analysis/                    # 🆕 経済分析モジュール
-│   │   ├── welfare_analysis.py      #   - 厚生分析（複数手法対応）
-│   │   └── fiscal_impact.py         #   - 財政インパクト分析
-│   ├── utils_new/                   # 🆕 強化されたユーティリティ
-│   │   ├── reform_definitions.py    #   - 税制改革定義・検証
-│   │   └── result_containers.py     #   - 結果データ管理
-│   └── models/                      # DSGEモデル実装
-│       └── simple_dsge.py           #   - 教育用簡単モデル
-├── notebooks/                        # インタラクティブ分析
-│   ├── tax_simulation_demo.ipynb    # 基本デモ
-│   ├── advanced_tax_simulation_demo.ipynb  # 高度な分析デモ
-│   ├── interactive_tax_analysis.ipynb      # インタラクティブ分析
-│   └── empirical_validation.ipynb   # 実証検証
-├── tests/                           # 包括的テストスイート
-│   ├── unit/                        # ユニットテスト
-│   └── integration/                 # 統合テスト
-├── scripts/                         # 分析・検証スクリプト
-│   └── validation/                  # モデル検証ツール
-├── docs/                           # 🆕 体系化されたドキュメント
-│   ├── REFACTORING_COMPLETION_SUMMARY.md  # リファクタリング完了報告
-│   ├── development/                 # 開発者向けドキュメント
-│   │   ├── setup.md                 # セットアップガイド  
-│   │   └── TAX_REFORM_TROUBLESHOOTING.md  # トラブルシューティング
-│   └── technical/                   # 技術ドキュメント
-│       ├── MODULAR_ARCHITECTURE_GUIDE.md # アーキテクチャガイド
-│       ├── RESEARCH_INTEGRITY_STATUS.md  # 研究品質ステータス
-│       ├── TECHNICAL_DOCS.md        # 技術仕様書
-│       └── LINEARIZATION_METHOD_GUIDE.md # 線形化手法ガイド
+│   ├── simulation/                  # シミュレーションエンジン
+│   ├── analysis/                    # 経済分析モジュール
+│   └── utils_new/                   # ユーティリティ
+├── notebooks/                        # Jupyter notebook デモ
+├── tests/                           # テストスイート
+├── docs/                           # ドキュメント
 ├── data/                           # データファイル
 ├── results/                        # シミュレーション結果
 └── quick_check.py                  # クイック動作確認
 ```
 
-### 🏗️ 新しいモジュラーアーキテクチャ（2025年6月版）
-
-**🎯 主要改善点:**
-- **分離された関心事**: シミュレーション、分析、ユーティリティが明確に分離
-- **研究グレード品質**: 複数の手法、明示的な仮定、学術的検証機能
-- **100%後方互換性**: 既存のコードは変更なしで動作
-- **包括的ドキュメント**: 技術仕様から開発ガイドまで完備
 
 ## 💻 インストールと実行
 
@@ -153,10 +119,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ### 基本的な使用例
 
-#### 🔄 既存ユーザー向け（後方互換性）
-
 ```python
-# 既存のコードは変更なしで動作します
 from src.dsge_model import DSGEModel, ModelParameters
 from src.tax_simulator import EnhancedTaxSimulator, TaxReform
 
@@ -164,7 +127,7 @@ from src.tax_simulator import EnhancedTaxSimulator, TaxReform
 params = ModelParameters.from_json('config/parameters.json')
 model = DSGEModel(params)
 
-# シミュレーターの作成（既存インターフェース）
+# シミュレーターの作成
 simulator = EnhancedTaxSimulator(model)
 
 # 消費税5%ポイント引き上げシナリオ
@@ -177,85 +140,9 @@ reform = TaxReform(
 # シミュレーション実行
 results = simulator.simulate_reform(reform, periods=40)
 
-# 結果の可視化
-simulator.plot_results(results)
-```
-
-#### 🆕 新しいモジュラーAPI（推奨）
-
-```python
-# より精密な制御とより優れた分析機能
-from src.dsge_model import DSGEModel, ModelParameters
-from src.simulation.enhanced_simulator import EnhancedSimulationEngine, LinearizationConfig
-from src.analysis.welfare_analysis import WelfareAnalyzer, WelfareConfig
-from src.analysis.fiscal_impact import FiscalAnalyzer, FiscalConfig
-from src.utils_new.reform_definitions import TaxReform
-
-# モデル初期化
-params = ModelParameters.from_json('config/parameters.json')
-model = DSGEModel(params)
-
-# 研究グレードシミュレーションエンジン
-sim_engine = EnhancedSimulationEngine(
-    baseline_model=model,
-    linearization_config=LinearizationConfig(
-        method='klein',  # 研究用Klein線形化
-        validate_bk_conditions=True
-    ),
-    research_mode=True
-)
-
-# 高度な厚生分析
-welfare_analyzer = WelfareAnalyzer(
-    config=WelfareConfig(
-        methodology='consumption_equivalent',
-        include_uncertainty=True,  # 信頼区間付き
-        confidence_level=0.95
-    )
-)
-
-# 財政インパクト分析
-fiscal_analyzer = FiscalAnalyzer(
-    config=FiscalConfig(
-        include_behavioral_responses=True,
-        include_general_equilibrium=True
-    )
-)
-
-# 税制改革シミュレーション
-reform = TaxReform(
-    name="包括的税制改革",
-    tau_c=0.12,    # 消費税12%
-    tau_l=0.18,    # 所得税18%
-    implementation='phased',
-    phase_in_periods=8
-)
-
-# 実行
-sim_results = sim_engine.simulate_reform(reform, periods=40)
-welfare_results = welfare_analyzer.analyze_welfare_impact(
-    sim_results.baseline_path, sim_results.reform_path
-)
-fiscal_results = fiscal_analyzer.analyze_fiscal_impact(
-    sim_results.reform_path, model.parameters, sim_results.baseline_path
-)
-
-# 包括的な結果分析
-print(f"厚生変化: {welfare_results.consumption_equivalent:.2%}")
-print(f"財政インパクト: {fiscal_results.present_value_impact:.2f}")
-```
-
-#### 🎓 教育・デモ用途
-
-```python
-# シンプルな線形化を使用（安定、理解しやすい）
-from src.tax_simulator import EnhancedTaxSimulator
-
-simulator = EnhancedTaxSimulator(
-    model, 
-    use_simple_linearization=True  # 教育用
-)
-results = simulator.simulate_reform(reform)
+# 結果の表示
+print(f"厚生変化: {results.welfare_change:.2%}")
+print(f"GDP影響: {results.summary_statistics()['Y']['peak_impact']:.2%}")
 ```
 
 #### Jupyter Notebookでの実行
@@ -379,59 +266,6 @@ custom_reform = TaxReform(
 - 消費税増税時（1989年、1997年、2014年、2019年）の実績データとの比較
 - 他のDSGEモデル（内閣府、日本銀行モデル）との結果比較
 
-## 🆕 2025年版の新機能・改善点
-
-### ✅ 完成済み（2025年6月）
-
-#### 🏗️ **モジュラーアーキテクチャ**
-- **研究グレード品質**: 複数の厚生分析手法、明示的な仮定、学術的検証
-- **分離された関心事**: シミュレーション、分析、ユーティリティモジュール
-- **100%後方互換性**: 既存コードは変更なしで動作
-- **包括的ドキュメント**: 技術仕様書から開発ガイドまで
-
-#### 🧮 **高度な線形化手法**
-- **Klein法（研究用）**: DSGE理論に基づく厳密な解法
-- **簡単線形化（教育用）**: 安定で理解しやすい近似解法
-- **自動選択**: 用途に応じた適切な手法の選択
-
-#### 📊 **強化された分析機能**
-- **複数の厚生分析手法**: 消費等価変分、Lucas厚生指標
-- **信頼区間付き結果**: ブートストラップによる不確実性定量化
-- **包括的財政分析**: 税収・支出・債務動学の詳細分析
-- **比較分析**: 複数シナリオの自動比較機能
-
-#### 🔬 **研究整合性システム**
-- **明示的な仮定**: すべての仮定が明確に文書化
-- **検証警告**: 研究用途での注意事項を自動表示
-- **パラメータ検証**: 経済的妥当性のチェック機能
-- **再現可能性**: 結果の完全な再現性を保証
-
-### 🚀 将来の拡張計画
-
-#### Phase 1: 国際化・開放経済 (2025年後半)
-- [ ] 開放経済モデルへの拡張（輸出入、為替レート）
-- [ ] 国際的な税制調整の分析
-- [ ] 為替レート政策との相互作用
-
-#### Phase 2: 異質性の導入 (2026年前半)
-- [ ] 異質的家計の導入（所得分布の考慮）
-- [ ] 世代重複モデル（OLGモデル）
-- [ ] 企業規模の異質性
-
-#### Phase 3: 金融セクター (2026年後半)
-- [ ] 金融摩擦の追加（銀行部門、信用制約）
-- [ ] 金融政策と財政政策の相互作用
-- [ ] 資産価格動学
-
-#### Phase 4: 人口動態・長期分析 (2027年)
-- [ ] 人口動態の考慮（少子高齢化の影響）
-- [ ] 社会保障制度との統合
-- [ ] 長期財政持続可能性分析
-
-#### Phase 5: 高度な不確実性 (2027年後半)
-- [ ] 不確実性・学習の導入
-- [ ] リアルタイムデータとの連携
-- [ ] 機械学習による政策最適化
 
 ## 📖 参考文献
 
@@ -453,85 +287,17 @@ custom_reform = TaxReform(
 
 ## 🤝 貢献
 
-プロジェクトへの貢献を歓迎します！新しいモジュラーアーキテクチャにより、より多くの貢献の機会があります。
+プロジェクトへの貢献を歓迎します。以下の手順でご参加ください：
 
-### 🚀 貢献の種類
+1. このリポジトリをフォーク
+2. 機能ブランチを作成 (`git checkout -b feature/amazing-feature`)
+3. 変更をコミット (`git commit -m 'Add some amazing feature'`)
+4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
+5. プルリクエストを作成
 
-#### 📊 **分析手法の追加**
-- 新しい厚生分析手法の実装
-- 追加的な財政分析機能
-- 新しい経済指標の計算
+## 📧 連絡先
 
-#### 🧮 **数値手法の改良**
-- より高速な線形化アルゴリズム
-- 並列計算の実装
-- 数値安定性の向上
-
-#### 📚 **教育・デモ機能**
-- インタラクティブな可視化
-- 教育用の簡単化されたモデル
-- より良いドキュメント
-
-#### 🔬 **研究品質の向上**
-- 実証的な検証
-- パラメータキャリブレーションの改良
-- 国際比較機能
-
-### 🛠️ 開発手順
-
-1. **リポジトリをフォーク**
-2. **機能ブランチを作成**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. **開発環境のセットアップ**
-   ```bash
-   uv sync
-   uv run python quick_check.py  # 動作確認
-   ```
-4. **モジュラーアーキテクチャに従って開発**
-   - `src/simulation/`: シミュレーション機能
-   - `src/analysis/`: 分析機能
-   - `src/utils_new/`: ユーティリティ機能
-5. **テストを追加・実行**
-   ```bash
-   uv run pytest tests/
-   ```
-6. **ドキュメント更新**
-   - コード内のdocstring
-   - 必要に応じて技術ドキュメント更新
-7. **変更をコミット**
-   ```bash
-   git commit -m 'Add: 新しい厚生分析手法を追加'
-   ```
-8. **プルリクエストを作成**
-
-### 📋 コーディング規約
-
-- **研究整合性**: 明示的な仮定、適切な検証
-- **モジュラー設計**: 明確な責任分離
-- **後方互換性**: 既存APIの維持
-- **包括的テスト**: 新機能には必ずテスト追加
-
-## 📧 連絡先・サポート
-
-### 🐛 問題報告・機能要望
-- **GitHub Issues**: [Issues ページ](https://github.com/DaisukeYoda/JapanTaxSimulator/issues)
-- **プルリクエスト**: [PR ページ](https://github.com/DaisukeYoda/JapanTaxSimulator/pulls)
-
-### 📚 ドキュメント・使用法
-- **技術ドキュメント**: `docs/technical/` 参照
-- **開発者ガイド**: `docs/development/` 参照  
-- **モジュラーアーキテクチャ**: `docs/technical/MODULAR_ARCHITECTURE_GUIDE.md`
-
-### 🎓 学術利用・研究協力
-研究目的での利用や共同研究についてはGitHub Issuesでお気軽にご相談ください。
-
----
-
-**📈 パフォーマンス**: このプロジェクトは研究品質とパフォーマンスの両立を目指しています  
-**🔬 品質保証**: 学術研究での利用を前提とした厳格な品質管理  
-**🌐 オープンソース**: MIT Licenseによる自由な利用・改変
+質問やフィードバックがございましたら、GitHub Issuesでお気軽にお問い合わせください。
 
 ---
 
