@@ -952,6 +952,6 @@ def compute_steady_state_with_logging(params):
 
 ---
 
-**最終更新**: [日付]
+**最終更新**: 2025年6月
 **バージョン**: 1.0
 **作成者**: Daisuke Yoda
