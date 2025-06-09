@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang='ja'>
+<head>
+  <meta charset='UTF-8'>
+  <title>税制改革の経済効果分析レポート</title>
+<style>
+body { font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; }
+.container { width: 80%; margin: auto; background-color: #fff; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+h1, h2, h3, h4 { color: #2c3e50; }
+h1 { text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+h2 { border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 30px; }
+h3 { margin-top: 25px; color: #3498db; }
+h4 { margin-top: 20px; color: #555; }
+table { border-collapse: collapse; width: auto; margin-top: 10px; margin-bottom: 15px; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+th { background-color: #f9f9f9; }
+ul { padding-left: 20px; }
+li { margin-bottom: 5px; }
+p { margin-bottom: 15px; }
+.code { background-color: #e8e8e8; padding: 2px 5px; border-radius: 3px; font-family: 'Courier New', Courier, monospace; }
+.note { background-color: #fff9c4; border-left: 4px solid #fdd835; padding: 10px; margin-top: 10px; }
+img { border: 1px solid #ccc; padding: 3px; background-color: #fff; }
+</style>
+</head>
+<body>
+  <div class='container'>
+<h1>税制改革の経済効果分析レポート</h1>
+<h2>はじめに</h2>
+<p>本レポートは、動学的確率的一般均衡（DSGE）モデルを用い、いくつかの税制変更が日本経済に与えるマクロ経済的影響を分析することを目的とする。具体的には、消費税及び所得税の変更シナリオについて、GDP、消費、投資、労働供給、税収といった主要経済変数への影響を評価する。</p>
+<h2>モデル概要</h2>
+<p>本分析で使用したDSGEモデルは、家計、企業、政府、中央銀行の4部門から構成される標準的なニューケインジアンモデルである。家計は効用を最大化し、企業は利潤を最大化する。政府は税収と国債発行により支出を賄い、中央銀行はテイラー則に基づき政策金利を決定する。ベースラインの税率は、消費税10%、所得税20%、法人税30%等に設定されている。詳細なパラメータは<span class="code">config/parameters.json</span>に記載されている。</p>
+<h2>シミュレーションシナリオ</h2>
+<ul>
+  <li>以下の4つの税制改革シナリオについてシミュレーション分析を行った。</li>
+  <li>恒久的消費税率5%ポイント引き上げ（10% → 15%）</li>
+  <li>段階的消費税率5%ポイント引き上げ（10% → 15%、8四半期で段階的に導入）</li>
+  <li>恒久的所得税率5%ポイント引き下げ（20% → 15%）</li>
+  <li>税収中立的改革（消費税率2%ポイント引き上げ、所得税率2%ポイント引き下げを想定）</li>
+</ul>
+
+<h2>シミュレーション結果</h2>
+<p>「恒久的消費税率5%ポイント引き上げ」の動学的調整過程の概要：
+  - Y: 第1期に約0.40%減少し、その後新たな定常状態へ収束する動きを見せた。
+  - C: 第1期に約0.60%減少し、その後新たな定常状態へ収束する動きを見せた。
+  - I: 第1期に約0.50%減少し、その後新たな定常状態へ収束する動きを見せた。
+  - L: 第1期に約0.25%減少し、その後新たな定常状態へ収束する動きを見せた。</p>
+<p>特筆すべき点として、消費税率引き上げにもかかわらず、総税収は約0.40%減少した。これは、税率上昇による消費の落ち込みが税収効果を上回ったことを示唆する。</p>
+<h3>シナリオ2: 段階的消費税率5%ポイント引き上げ</h3>
+<h4>シナリオ2 - 定常状態変化</h4>
+<table border='1' style='border-collapse: collapse; width: auto;'>
+<thead><tr><th style='text-align: left; padding: 5px;'>変数</th><th style='text-align: right; padding: 5px;'>ベースライン比 (%)</th></tr></thead>
+<tbody>
+  <tr><td style='padding: 5px;'>Y</td><td style='text-align: right; padding: 5px;'>-0.40</td></tr>
+  <tr><td style='padding: 5px;'>C</td><td style='text-align: right; padding: 5px;'>-0.50</td></tr>
+  <tr><td style='padding: 5px;'>I</td><td style='text-align: right; padding: 5px;'>-0.45</td></tr>
+  <tr><td style='padding: 5px;'>L</td><td style='text-align: right; padding: 5px;'>-0.25</td></tr>
+  <tr><td style='padding: 5px;'>G</td><td style='text-align: right; padding: 5px;'>0.00</td></tr>
+  <tr><td style='padding: 5px;'>T_total_revenue</td><td style='text-align: right; padding: 5px;'>-0.40</td></tr>
+  <tr><td style='padding: 5px;'>B</td><td style='text-align: right; padding: 5px;'>データなし</td></tr>
+  <tr><td style='padding: 5px;'>w</td><td style='text-align: right; padding: 5px;'>0.00</td></tr>
+  <tr><td style='padding: 5px;'>pi_gross</td><td style='text-align: right; padding: 5px;'>0.00</td></tr>
+</tbody>
+</table>
+<p><img src='results/current_analysis_report_data/irf_plot_consumption_tax_increase_5pp_phased.png' alt='シナリオ2 IRFプロット' style='width:100%;max-width:600px;border:1px solid #ccc;'></p>
+<p>「段階的消費税率5%ポイント引き上げ」の動学的調整過程の概要：
+  - Y: 第1期に約0.06%減少し、その後新たな定常状態へ収束する動きを見せた。
+  - C: 第1期に約0.09%減少し、その後新たな定常状態へ収束する動きを見せた。
+  - I: 第1期に約0.07%減少し、その後新たな定常状態へ収束する動きを見せた。
+  - L: 第1期に約0.04%減少し、その後新たな定常状態へ収束する動きを見せた。
+  - 段階的導入により、各変数の変化は恒久的な即時導入の場合と比較して緩やかであった。</p>
+<p>長期的（定常状態）な影響はシナリオ1（恒久的導入）と同様であったが、経済への短期的な影響はより緩やかであった。</p>
+<h3>シナリオ3: 恒久的所得税率5%ポイント引き下げ</h3>
+<h4>シナリオ3 - 定常状態変化</h4>
+<table border='1' style='border-collapse: collapse; width: auto;'>
+<thead><tr><th style='text-align: left; padding: 5px;'>変数</th><th style='text-align: right; padding: 5px;'>ベースライン比 (%)</th></tr></thead>
+<tbody>
+  <tr><td style='padding: 5px;'>Y</td><td style='text-align: right; padding: 5px;'>0.36</td></tr>
+  <tr><td style='padding: 5px;'>C</td><td style='text-align: right; padding: 5px;'>0.45</td></tr>
+  <tr><td style='padding: 5px;'>I</td><td style='text-align: right; padding: 5px;'>0.41</td></tr>
+  <tr><td style='padding: 5px;'>L</td><td style='text-align: right; padding: 5px;'>0.23</td></tr>
+  <tr><td style='padding: 5px;'>G</td><td style='text-align: right; padding: 5px;'>0.00</td></tr>
+  <tr><td style='padding: 5px;'>T_total_revenue</td><td style='text-align: right; padding: 5px;'>0.36</td></tr>
+  <tr><td style='padding: 5px;'>B</td><td style='text-align: right; padding: 5px;'>データなし</td></tr>
+  <tr><td style='padding: 5px;'>w</td><td style='text-align: right; padding: 5px;'>0.00</td></tr>
+  <tr><td style='padding: 5px;'>pi_gross</td><td style='text-align: right; padding: 5px;'>0.00</td></tr>
+</tbody>
+</table>
+<p><img src='results/current_analysis_report_data/irf_plot_income_tax_reduction_5pp_permanent.png' alt='シナリオ3 IRFプロット' style='width:100%;max-width:600px;border:1px solid #ccc;'></p>
+<p>「恒久的所得税率5%ポイント引き下げ」の動学的調整過程の概要：
+  - Y: 第1期に約0.32%増加し、その後新たな定常状態へ収束する動きを見せた。
+  - C: 第1期に約0.48%増加し、その後新たな定常状態へ収束する動きを見せた。
+  - I: 第1期に約0.40%増加し、その後新たな定常状態へ収束する動きを見せた。
+  - L: 第1期に約0.20%増加し、その後新たな定常状態へ収束する動きを見せた。</p>
+<p>所得税率引き下げにより経済活動が刺激され、総税収は約0.36%増加した。これは、いわゆるラッファーカーブの右側（減税による税収増）の効果を示唆している可能性がある。</p>
+<h3>シナリオ4: 税収中立的改革（消費税+2%p、所得税-2%p）</h3>
+<h4>シナリオ4 - 定常状態変化</h4>
+<table border='1' style='border-collapse: collapse; width: auto;'>
+<thead><tr><th style='text-align: left; padding: 5px;'>変数</th><th style='text-align: right; padding: 5px;'>ベースライン比 (%)</th></tr></thead>
+<tbody>
+  <tr><td style='padding: 5px;'>Y</td><td style='text-align: right; padding: 5px;'>-6.61</td></tr>
+  <tr><td style='padding: 5px;'>C</td><td style='text-align: right; padding: 5px;'>-0.90</td></tr>
+  <tr><td style='padding: 5px;'>I</td><td style='text-align: right; padding: 5px;'>0.00</td></tr>
+  <tr><td style='padding: 5px;'>L</td><td style='text-align: right; padding: 5px;'>-0.74</td></tr>
+  <tr><td style='padding: 5px;'>G</td><td style='text-align: right; padding: 5px;'>0.04</td></tr>
+  <tr><td style='padding: 5px;'>T_total_revenue</td><td style='text-align: right; padding: 5px;'>1.65</td></tr>
+  <tr><td style='padding: 5px;'>B</td><td style='text-align: right; padding: 5px;'>データなし</td></tr>
+  <tr><td style='padding: 5px;'>w</td><td style='text-align: right; padding: 5px;'>0.50</td></tr>
+  <tr><td style='padding: 5px;'>pi_gross</td><td style='text-align: right; padding: 5px;'>-0.25</td></tr>
+</tbody>
+</table>
+<p><img src='results/current_analysis_report_data/irf_plot_revenue_neutral_c_up_l_down.png' alt='シナリオ4 IRFプロット' style='width:100%;max-width:600px;border:1px solid #ccc;'></p>
+<p>「税収中立的改革」の動学的調整過程の概要：
+  - Y: 第1期に約0.03%減少し、その後新たな定常状態へ収束する動きを見せた。
+  - C: 第1期に約0.05%減少し、その後新たな定常状態へ収束する動きを見せた。
+  - I: 第1期に約0.04%減少し、その後新たな定常状態へ収束する動きを見せた。
+  - L: 第1期に約0.02%減少し、その後新たな定常状態へ収束する動きを見せた。</p>
+<p>このシナリオでは、GDPが約-6.61%と大幅に減少し、消費も落ち込んだ。 総税収は約1.65%増加した。 実質賃金の上昇（約0.50%）が観測された。 インフレ率（グロス）の変化は約-0.25%であった。</p>
+<h2>考察</h2>
+<p>シミュレーション結果から、いくつかの重要な示唆が得られた。</p>
+<p>まず、消費税率の引き上げは、本モデルの範囲内ではGDP、消費、投資、労働供給を減少させ、さらに総税収も減少させる可能性が示された。これは、税率上昇による負の需要効果が税収基盤を縮小させる効果を上回る場合に起こりうる。</p>
+<p>次に、所得税率の引き下げは、主要な経済活動を刺激し、総税収を増加させる結果となった。これは、労働供給や消費へのインセンティブが改善されたためと考えられる。</p>
+<p>消費税増税を段階的に導入した場合、経済への最終的な影響（定常状態）は即時導入の場合と同じであったが、短期的な調整の速度は緩やかになり、急激な変化を緩和する効果が見られた。</p>
+<p>「税収中立」を目指した消費税増・所得税減の組み合わせシナリオ（シナリオ4）では、GDPが大幅に減少する結果となり、本モデルの構造とパラメータ設定の下では、所得税から消費税へのシフトが経済活動に対して強い負の影響を持つ可能性が示唆された。特に、投資への定常的な影響がほぼゼロであった点や、インフレ率が長期的に低下した点は、さらなる詳細な分析を要する。また、このシナリオで政府支出（G）に微増が見られた点は、モデルの仕様確認が必要である。</p>
+<p>留意事項として、本シミュレーションは特定のDSGEモデルとそのパラメータ設定に基づいたものであり、結果はこれらの仮定に依存する。シミュレーション実行時には、定常状態計算の収束性や線形化手法に関する警告が観測されており、これはモデルの安定性や結果の頑健性について注意が必要であることを示している。プロジェクト内には<span class="code">ACADEMIC_RESEARCH_REMEDIATION_PLAN.md</span>が存在し、モデルの信頼性向上のための取り組みが計画されている。また、一部の変数（例：政府債務残高 `B`）の定常状態データが得られていない点も限界として挙げられる。</p>
+<h2>結論</h2>
+<p>本分析結果は、税制変更がマクロ経済に与える影響の方向性と大まかな規模を示唆するものである。消費税増税は経済活動を抑制し税収を減少させる可能性があり、所得税減税は経済を刺激し税収を増加させる可能性がある。税負担構造の変更（所得税から消費税へ）は、本モデルでは大きな負の経済的影響をもたらした。ただし、これらの結果の解釈には、モデルの仮定と限界、およびシミュレーションの安定性に関する警告を十分に考慮する必要がある。より詳細な政策評価のためには、モデルの継続的な改善と検証が不可欠である。</p>
+<h2>付録</h2>
+<p>詳細なシミュレーション結果（IRFデータ、定常状態比較データ）は、<span class="code">results/current_analysis_report_data/</span> ディレクトリ内のCSVファイルとして別途保存されている。</p>
+
+  </div>
+</body>
+</html>
