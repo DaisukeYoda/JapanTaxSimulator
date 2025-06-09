@@ -36,3 +36,6 @@ dev_tools/
 
 # Claude Code documentation (personal/local use)
 CLAUDE.md
+
+# Research documents (sensitive/draft content)
+docs/research/
