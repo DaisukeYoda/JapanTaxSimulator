@@ -122,11 +122,18 @@ class DSGEModel:
         params = self.params
         vars_dict = {}
         
-        # 変数のマッピング
+        # 変数のマッピング - FIXED: 対数変数の二重変換を防ぐ + 数値安定性向上
         for i, var_name in enumerate(self.endogenous_vars_solve):
             val = x_solve[i]
+            # 対数変数の場合、solverに渡される値は既にlog(K), log(L)
+            # 方程式では実際の値K, Lが必要なので、exp()で元に戻す
             if var_name in self.log_vars_indices:
-                vars_dict[var_name] = np.exp(val)
+                # 数値安定性のため対数変数を範囲制限
+                if var_name == 'K':
+                    val = np.clip(val, -2.0, 4.0)  # exp(-2) = 0.14, exp(4) = 54.6
+                elif var_name == 'L':
+                    val = np.clip(val, -2.0, 1.0)  # exp(-2) = 0.14, exp(1) = 2.72
+                vars_dict[var_name] = val  # これがlog(K), log(L)
             else:
                 vars_dict[var_name] = val
         
@@ -152,32 +159,35 @@ class DSGEModel:
         debt_feedback = params.phi_b * (debt_ratio - by_target_q)
         tau_l_effective = np.clip(params.tau_l + debt_feedback, 0.05, 0.8)
         
-        # 税収計算
+        # 税収計算 - FIXED: K, Lが対数変数 + overflow対策
         Tc_val = params.tau_c * C
-        Tl_val = tau_l_effective * w * L
-        Tk_val = params.tau_k * Rk_gross * K
+        # 安全なexp計算
+        L_level = np.exp(np.clip(L, -10, 10))
+        K_level = np.exp(np.clip(K, -10, 10))
+        Tl_val = tau_l_effective * w * L_level
+        Tk_val = params.tau_k * Rk_gross * K_level
         Tf_val = params.tau_f * profit
         T_val = Tc_val + Tl_val + Tk_val + Tf_val
         
         # 定常状態方程式（簡略化・安定化版）
         eqns = [
-            # 1. 家計の最適化（消費）
-            (1 - params.beta * params.habit) / (C * (1 - params.habit)) - Lambda * (1 + params.tau_c),
+            # 1. 家計の最適化（消費）- FIXED: 正しい習慣形成の定常状態条件
+            1 / (C * (1 - params.habit)) - Lambda * (1 + params.tau_c),
             
-            # 2. 家計の最適化（労働）
-            params.chi * L**(1/params.sigma_l) - Lambda * (1 - tau_l_effective) * w / (1 + params.tau_c),
+            # 2. 家計の最適化（労働）- FIXED: Lが対数変数 + overflow対策
+            params.chi * L_level**(1/params.sigma_l) - Lambda * (1 - tau_l_effective) * w / (1 + params.tau_c),
             
             # 3. オイラー方程式（定常状態）
             Lambda - params.beta * Lambda * (1 + r_net_real) / pi_gross,
             
-            # 4. 生産関数
-            Y - K**params.alpha * L**(1 - params.alpha),
+            # 4. 生産関数 - FIXED: K, Lが対数変数の場合はexp()を適用 + overflow対策
+            Y - K_level**params.alpha * L_level**(1 - params.alpha),
             
-            # 5. 労働の1階条件（簡略化）
-            w - (1 - params.alpha) * Y / max(L, 1e-6),
+            # 5. 労働の1階条件（簡略化）- FIXED: Lが対数変数 + overflow対策
+            w - (1 - params.alpha) * Y / max(L_level, 1e-6),
             
-            # 6. 資本の1階条件（簡略化）
-            Rk_gross - params.alpha * Y / max(K, 1e-6),
+            # 6. 資本の1階条件（簡略化）- FIXED: Kが対数変数 + overflow対策
+            Rk_gross - params.alpha * Y / max(K_level, 1e-6),
             
             # 7. インフレーション（定常状態）
             pi_gross - params.pi_target,
@@ -197,11 +207,11 @@ class DSGEModel:
             # 12. Fisher方程式
             (1 + r_net_real) - i_nominal_gross / pi_gross,
             
-            # 13. 資本蓄積（定常状態）
-            I - params.delta * K,
+            # 13. 資本蓄積（定常状態）- FIXED: Kが対数変数 + overflow対策
+            I - params.delta * K_level,
             
-            # 14. 投資の最適化
-            (1 - params.tau_k) * Rk_gross - params.delta - r_net_real,
+            # 14. 投資の最適化（Euler equation for capital）- FIXED: 正しい定常状態条件
+            (1 - params.tau_k) * Rk_gross + (1 - params.delta) - 1/params.beta,
             
             # 15. 利潤定義
             profit - (1 - mc) * Y,
@@ -382,14 +392,15 @@ class DSGEModel:
             if hasattr(self.params, 'tau_f'):
                 tax_change_magnitude += abs(self.params.tau_f - 0.30)  # vs baseline 30%
             
-            # For small tax changes, baseline values often work better, but avoid the "death valley" around 1.5-2.5pp
-            if tax_change_magnitude < 0.015 or (tax_change_magnitude >= 0.015 and tax_change_magnitude <= 0.025):
+            # For very small tax changes, baseline values often work better, but avoid the "death valley" around 1.5-2.5pp
+            # Lowered threshold from 0.015 to 0.005 to capture meaningful 0.5%+ changes
+            if tax_change_magnitude < 0.005 or (tax_change_magnitude >= 0.015 and tax_change_magnitude <= 0.025):
                 # Use tax-adjusted for the problematic 1.5-2.5pp range
                 if tax_change_magnitude >= 0.015 and tax_change_magnitude <= 0.025:
                     print(f"Using tax-adjusted initial guess for problematic range (magnitude: {tax_change_magnitude:.3f})")
                     initial_guess_dict = self._compute_tax_adjusted_initial_guess(baseline_ss)
                 else:
-                    print(f"Using baseline values for small tax change (magnitude: {tax_change_magnitude:.3f})")
+                    print(f"Using baseline values for very small tax change (magnitude: {tax_change_magnitude:.3f})")
                     initial_guess_dict = {var: getattr(baseline_ss, var) 
                                         for var in self.endogenous_vars_solve}
             else:
@@ -653,33 +664,44 @@ class _SteadyStateComputer:
         ss_defaults.K = (params.ky_ratio / 4) * ss_defaults.Y  # Quarterly K/Y ratio
         ss_defaults.L = params.hours_steady  # 0.33
         
-        # Production function consistency check (lines 323-329)
-        Y_from_production = ss_defaults.K**params.alpha * ss_defaults.L**(1-params.alpha)
-        if abs(Y_from_production - ss_defaults.Y) > 0.1:
-            ss_defaults.Y = Y_from_production
-            ss_defaults.C = params.cy_ratio * ss_defaults.Y
-            ss_defaults.I = params.iy_ratio * ss_defaults.Y
+        # Production function consistency check (lines 323-329) - FIXED: より適切なスケール
+        # 生産関数 Y = K^α * L^(1-α) から適切なK, Lを計算 + 数値安定性考慮
+        target_Y = 1.0
+        target_L = 0.33
+        # Y = K^α * L^(1-α) => K = (Y / L^(1-α))^(1/α)
+        calculated_K = (target_Y / (target_L**(1-params.alpha)))**(1/params.alpha)
         
-        # Government sector (lines 330-334)
+        # 数値安定性のため、Kを合理的な範囲に制限（年率GDP比で2-12倍程度）
+        ss_defaults.K = np.clip(calculated_K, 2.0, 12.0)
+        ss_defaults.L = target_L
+        
+        # Kを調整した場合、Yも再計算（生産関数で整合性確保）
+        ss_defaults.Y = ss_defaults.K**params.alpha * ss_defaults.L**(1-params.alpha)
+        
+        # 需要コンポーネントを再計算
+        ss_defaults.I = params.delta * ss_defaults.K  # I = δK (steady state)
         ss_defaults.G = params.gy_ratio * ss_defaults.Y
-        C_implied = ss_defaults.Y - ss_defaults.I - ss_defaults.G
-        if abs(C_implied - ss_defaults.C) > 0.01:
-            ss_defaults.C = C_implied  # Accounting identity
+        ss_defaults.C = ss_defaults.Y - ss_defaults.I - ss_defaults.G
         
         # Labor market (lines 335-336)
         if ss_defaults.L > 1e-9:
             ss_defaults.w = (1-params.alpha) * ss_defaults.mc * ss_defaults.Y / ss_defaults.L
         else:
             ss_defaults.w = 2.0
-        
+            
         # Government debt (line 338)
         ss_defaults.B_real = max((params.by_ratio/4)*ss_defaults.Y, 0.1*ss_defaults.Y)
         
-        # Household optimization (lines 339-340)
+        # 消費と労働の1階条件を同時に満たすLambdaを計算 - FIXED: 両方の条件を満たす
+        # 消費の1階条件から: λ = 1/(C*(1-h)*(1+τ_c))
         if ss_defaults.C*(1-params.habit) > 1e-9:
-            ss_defaults.Lambda = (1-params.beta*params.habit)/(ss_defaults.C*(1-params.habit)*(1+params.tau_c))
+            ss_defaults.Lambda = 1 / (ss_defaults.C * (1-params.habit) * (1+params.tau_c))
         else:
             ss_defaults.Lambda = 1.0
+            
+        # 注記: chiパラメータが固定されている場合、消費と労働の1階条件が
+        # 同時に満たされない可能性があります。実際の均衡計算では
+        # 数値解法により適切な値が見つかります。
         
         # Firm sector (line 341)
         ss_defaults.profit = (1-ss_defaults.mc) * ss_defaults.Y
@@ -730,12 +752,12 @@ class _SteadyStateComputer:
             tax_change_magnitude += abs(self.params.tau_f - 0.30)  # vs baseline 30%
         
         # Strategy selection (lines 365-376)
-        if tax_change_magnitude < 0.015 or (tax_change_magnitude >= 0.015 and tax_change_magnitude <= 0.025):
+        if tax_change_magnitude < 0.005 or (tax_change_magnitude >= 0.015 and tax_change_magnitude <= 0.025):
             if tax_change_magnitude >= 0.015 and tax_change_magnitude <= 0.025:
                 print(f"Using tax-adjusted initial guess for problematic range (magnitude: {tax_change_magnitude:.3f})")
                 return self.model._compute_tax_adjusted_initial_guess(baseline_ss)
             else:
-                print(f"Using baseline values for small tax change (magnitude: {tax_change_magnitude:.3f})")
+                print(f"Using baseline values for very small tax change (magnitude: {tax_change_magnitude:.3f})")
                 return {var: getattr(baseline_ss, var) for var in self.model.endogenous_vars_solve}
         else:
             print(f"Using tax-adjusted initial guess for large tax change (magnitude: {tax_change_magnitude:.3f})")

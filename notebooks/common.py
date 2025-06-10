@@ -186,6 +186,7 @@ def load_baseline_model(config_path: str = 'config/parameters.json'):
         if not hasattr(model, 'steady_state') or model.steady_state is None:
             print("🔄 定常状態を計算中...")
             steady_state = model.compute_steady_state()
+            model.steady_state = steady_state  # Set the steady state on the model
             print("✅ 定常状態計算完了")
         else:
             print("✅ 定常状態は既に計算済み")
@@ -198,7 +199,8 @@ def load_baseline_model(config_path: str = 'config/parameters.json'):
 def create_research_simulator(
     model, 
     force_research_mode: bool = True,
-    use_simple_linearization: bool = False
+    use_simple_linearization: bool = False,
+    use_simple_model: bool = False
 ):
     """
     研究グレードシミュレータの作成
@@ -234,11 +236,12 @@ def create_research_simulator(
     try:
         simulator = EnhancedTaxSimulator(
             model, 
-            use_simple_model=False,  # 🚨 DummySteadyState完全回避
+            use_simple_model=use_simple_model,  # 明示的なモデル選択
+            use_simple_linearization=use_simple_linearization,  # 明示的な線形化選択
             research_mode=True       # 🚨 常に研究モード強制
         )
         status_info['simulator_type'] = 'EnhancedTaxSimulator'
-        status_info['linearization_method'] = 'enhanced'
+        status_info['linearization_method'] = f"simple_model={use_simple_model}, simple_linearization={use_simple_linearization}"
         status_info['research_compliance'] = '✅ COMPLIANT'
         print("📚 拡張シミュレータ初期化成功（DummySteadyState回避）")
         return simulator, status_info
@@ -255,6 +258,52 @@ def create_research_simulator(
         f"エラー詳細: {status_info['warnings']}\n"
         f"解決策: モデルパラメータまたは計算設定を確認してください。"
     )
+
+
+def test_different_model_configurations(model):
+    """
+    異なるモデル設定での結果比較テスト
+    """
+    print("🔍 モデル設定比較テスト開始...")
+    
+    configurations = [
+        {"use_simple_model": False, "use_simple_linearization": False, "name": "完全DSGE+Klein線形化"},
+        {"use_simple_model": False, "use_simple_linearization": True, "name": "完全DSGE+簡易線形化"},
+        {"use_simple_model": True, "use_simple_linearization": True, "name": "簡易モデル+簡易線形化"}
+    ]
+    
+    test_reform = {
+        "name": "テスト用消費税1%増税",
+        "tau_c": 0.11,  # 10% -> 11%
+        "implementation": "permanent"
+    }
+    
+    for config in configurations:
+        try:
+            print(f"\n=== {config['name']} ===")
+            simulator, status = create_research_simulator(
+                model, 
+                use_simple_model=config["use_simple_model"],
+                use_simple_linearization=config["use_simple_linearization"]
+            )
+            print(f"設定: {status['linearization_method']}")
+            
+            # 簡単なテストシミュレーション
+            from src.utils_new.reform_definitions import TaxReform
+            reform = TaxReform(**test_reform)
+            result = simulator.simulate_reform(reform, periods=8)
+            
+            # 結果の要約表示
+            if hasattr(result, 'time_series') and 'Y' in result.time_series:
+                gdp_change = ((result.time_series['Y'][4] / result.time_series['Y'][0]) - 1) * 100
+                print(f"GDP変化 (4期後): {gdp_change:.3f}%")
+            else:
+                print("❌ GDP結果が取得できません")
+                
+        except Exception as e:
+            print(f"❌ {config['name']} 失敗: {e}")
+    
+    print("\n✅ モデル設定比較テスト完了")
 
 
 def validate_research_compliance(simulator) -> Dict[str, Any]:
