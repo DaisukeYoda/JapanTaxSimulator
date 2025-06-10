@@ -39,3 +39,8 @@ CLAUDE.md
 
 # Research documents (sensitive/draft content)
 docs/research/
+
+# Debug and test files
+debug_*.py
+test_*.py
+fix_*.py
