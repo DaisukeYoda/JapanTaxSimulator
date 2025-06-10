@@ -29,18 +29,18 @@ import warnings
 from dataclasses import dataclass
 
 # Import legacy components that are still needed
-from dsge_model import DSGEModel, SteadyState, ModelParameters
-from research_warnings import research_critical, research_deprecated, ResearchWarning
+from .dsge_model import DSGEModel, SteadyState, ModelParameters
+from .research_warnings import research_critical, research_deprecated, ResearchWarning
 
 # Import new modular components
-from simulation.enhanced_simulator import EnhancedSimulationEngine, LinearizationConfig
-from simulation.base_simulator import SimulationConfig
-from analysis.welfare_analysis import WelfareAnalyzer, WelfareConfig
-from analysis.fiscal_impact import FiscalAnalyzer, FiscalConfig
+from .simulation.enhanced_simulator import EnhancedSimulationEngine, LinearizationConfig
+from .simulation.base_simulator import SimulationConfig
+from .analysis.welfare_analysis import WelfareAnalyzer, WelfareConfig
+from .analysis.fiscal_impact import FiscalAnalyzer, FiscalConfig
 
 # Re-export key classes for backward compatibility
-from utils_new.reform_definitions import TaxReform, SpecializedTaxReforms
-from utils_new.result_containers import SimulationResults, ComparisonResults
+from .utils_new.reform_definitions import TaxReform, SpecializedTaxReforms
+from .utils_new.result_containers import SimulationResults, ComparisonResults
 
 
 class EnhancedTaxSimulator:

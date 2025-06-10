@@ -213,7 +213,7 @@ class TransitionComputer:
             )
         else:
             transition_data = self._compute_simple_transition(
-                shock_magnitude, baseline_values, periods
+                shock_magnitude, baseline_values, periods, tax_changes=tax_changes
             )
         
         # Convert to DataFrame
@@ -245,27 +245,28 @@ class TransitionComputer:
             )
             return self._compute_approximate_transition(
                 sum(abs(change) for change in tax_changes.values()),
-                baseline_values, periods, method='klein'
+                baseline_values, periods, method='klein', tax_changes=tax_changes
             )
         except Exception as e:
             warnings.warn(f"Klein transition computation failed: {e}")
             return self._compute_simple_transition(
                 sum(abs(change) for change in tax_changes.values()),
-                baseline_values, periods
+                baseline_values, periods, tax_changes=tax_changes
             )
     
     def _compute_simple_transition(self, shock_magnitude: float,
                                  baseline_values: Dict[str, float],
-                                 periods: int) -> Dict[str, List[float]]:
+                                 periods: int, tax_changes: Optional[Dict[str, float]] = None) -> Dict[str, List[float]]:
         """Compute transition using simple linearization."""
         return self._compute_approximate_transition(
-            shock_magnitude, baseline_values, periods, method='simple'
+            shock_magnitude, baseline_values, periods, method='simple', tax_changes=tax_changes
         )
     
     def _compute_approximate_transition(self, shock_magnitude: float,
                                       baseline_values: Dict[str, float],
-                                      periods: int, method: str) -> Dict[str, List[float]]:
-        """Compute approximate transition path."""
+                                      periods: int, method: str, 
+                                      tax_changes: Optional[Dict[str, float]] = None) -> Dict[str, List[float]]:
+        """Compute approximate transition path with proper tax direction effects."""
         transition_data = {}
         
         # Parameters based on method
@@ -290,8 +291,14 @@ class TransitionComputer:
             baseline = baseline_values[var]
             params = var_params.get(var, {'response': initial_response, 'persist': persistence})
             
-            # Initial response (negative for tax increases)
-            initial_effect = -params['response'] * shock_magnitude * baseline
+            # Compute economic direction effect based on tax changes
+            if tax_changes is not None:
+                direction_effect = self._compute_tax_direction_effect(var, tax_changes)
+            else:
+                direction_effect = -shock_magnitude  # Fallback: assume negative effect
+            
+            # Initial response with proper economic direction
+            initial_effect = params['response'] * direction_effect * baseline
             
             # Generate transition path
             path = []
@@ -307,6 +314,67 @@ class TransitionComputer:
             transition_data[var] = path
         
         return transition_data
+    
+    def _compute_tax_direction_effect(self, variable: str, tax_changes: Dict[str, float]) -> float:
+        """
+        Compute the economic direction effect of tax changes on specific variables.
+        
+        Args:
+            variable: Economic variable (Y, C, I, L, etc.)
+            tax_changes: Dictionary of tax rate changes
+            
+        Returns:
+            Signed effect magnitude (positive = stimulative, negative = contractionary)
+        """
+        total_effect = 0.0
+        
+        # Consumption tax effects
+        if 'tau_c' in tax_changes:
+            dtau_c = tax_changes['tau_c']
+            if variable == 'C':
+                total_effect -= dtau_c * 1.5  # Strong negative effect on consumption
+            elif variable == 'Y':
+                total_effect -= dtau_c * 1.2  # Moderate negative effect on GDP
+            elif variable == 'I':
+                total_effect -= dtau_c * 0.3  # Weak negative effect on investment
+            elif variable == 'L':
+                total_effect -= dtau_c * 0.5  # Weak negative effect on labor
+                
+        # Income tax effects  
+        if 'tau_l' in tax_changes:
+            dtau_l = tax_changes['tau_l']
+            if variable == 'L':
+                total_effect -= dtau_l * 1.8  # Strong negative effect on labor
+            elif variable == 'C':
+                total_effect -= dtau_l * 1.2  # Moderate negative effect on consumption
+            elif variable == 'Y':
+                total_effect -= dtau_l * 1.0  # Moderate negative effect on GDP
+            elif variable == 'I':
+                total_effect -= dtau_l * 0.2  # Weak negative effect on investment
+                
+        # Corporate tax effects
+        if 'tau_f' in tax_changes:
+            dtau_f = tax_changes['tau_f']
+            if variable == 'I':
+                total_effect -= dtau_f * 2.0  # Strong negative effect on investment
+            elif variable == 'Y':
+                total_effect -= dtau_f * 0.8  # Moderate negative effect on GDP
+            elif variable == 'L':
+                total_effect -= dtau_f * 0.4  # Weak positive effect on labor demand
+            elif variable == 'C':
+                total_effect -= dtau_f * 0.1  # Very weak effect on consumption
+                
+        # Capital tax effects (if present)
+        if 'tau_k' in tax_changes:
+            dtau_k = tax_changes['tau_k'] 
+            if variable == 'I':
+                total_effect -= dtau_k * 1.5  # Strong negative effect on investment
+            elif variable == 'K':
+                total_effect -= dtau_k * 1.0  # Direct effect on capital
+            elif variable == 'Y':
+                total_effect -= dtau_k * 0.6  # Moderate negative effect on GDP
+                
+        return total_effect
     
     def _compute_matrix_based_transition(self, P: np.ndarray, Q: np.ndarray,
                                        tax_changes: Dict[str, float],
