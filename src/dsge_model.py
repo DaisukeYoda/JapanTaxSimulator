@@ -122,14 +122,17 @@ class DSGEModel:
         params = self.params
         vars_dict = {}
         
-        # 変数のマッピング - FIXED: 対数変数の二重変換を防ぐ
+        # 変数のマッピング - FIXED: 対数変数の二重変換を防ぐ + 数値安定性向上
         for i, var_name in enumerate(self.endogenous_vars_solve):
             val = x_solve[i]
             # 対数変数の場合、solverに渡される値は既にlog(K), log(L)
             # 方程式では実際の値K, Lが必要なので、exp()で元に戻す
             if var_name in self.log_vars_indices:
-                # ただし、solverは既にlog空間で動作しているので、
-                # ここでは直接値を使用し、生産関数でexp()を適用
+                # 数値安定性のため対数変数を範囲制限
+                if var_name == 'K':
+                    val = np.clip(val, -2.0, 4.0)  # exp(-2) = 0.14, exp(4) = 54.6
+                elif var_name == 'L':
+                    val = np.clip(val, -2.0, 1.0)  # exp(-2) = 0.14, exp(1) = 2.72
                 vars_dict[var_name] = val  # これがlog(K), log(L)
             else:
                 vars_dict[var_name] = val
@@ -156,10 +159,13 @@ class DSGEModel:
         debt_feedback = params.phi_b * (debt_ratio - by_target_q)
         tau_l_effective = np.clip(params.tau_l + debt_feedback, 0.05, 0.8)
         
-        # 税収計算 - FIXED: K, Lが対数変数
+        # 税収計算 - FIXED: K, Lが対数変数 + overflow対策
         Tc_val = params.tau_c * C
-        Tl_val = tau_l_effective * w * np.exp(L)
-        Tk_val = params.tau_k * Rk_gross * np.exp(K)
+        # 安全なexp計算
+        L_level = np.exp(np.clip(L, -10, 10))
+        K_level = np.exp(np.clip(K, -10, 10))
+        Tl_val = tau_l_effective * w * L_level
+        Tk_val = params.tau_k * Rk_gross * K_level
         Tf_val = params.tau_f * profit
         T_val = Tc_val + Tl_val + Tk_val + Tf_val
         
@@ -168,20 +174,20 @@ class DSGEModel:
             # 1. 家計の最適化（消費）- FIXED: 正しい習慣形成の定常状態条件
             1 / (C * (1 - params.habit)) - Lambda * (1 + params.tau_c),
             
-            # 2. 家計の最適化（労働）- FIXED: Lが対数変数
-            params.chi * np.exp(L)**(1/params.sigma_l) - Lambda * (1 - tau_l_effective) * w / (1 + params.tau_c),
+            # 2. 家計の最適化（労働）- FIXED: Lが対数変数 + overflow対策
+            params.chi * L_level**(1/params.sigma_l) - Lambda * (1 - tau_l_effective) * w / (1 + params.tau_c),
             
             # 3. オイラー方程式（定常状態）
             Lambda - params.beta * Lambda * (1 + r_net_real) / pi_gross,
             
-            # 4. 生産関数 - FIXED: K, Lが対数変数の場合はexp()を適用
-            Y - np.exp(K)**params.alpha * np.exp(L)**(1 - params.alpha),
+            # 4. 生産関数 - FIXED: K, Lが対数変数の場合はexp()を適用 + overflow対策
+            Y - K_level**params.alpha * L_level**(1 - params.alpha),
             
-            # 5. 労働の1階条件（簡略化）- FIXED: Lが対数変数
-            w - (1 - params.alpha) * Y / max(np.exp(L), 1e-6),
+            # 5. 労働の1階条件（簡略化）- FIXED: Lが対数変数 + overflow対策
+            w - (1 - params.alpha) * Y / max(L_level, 1e-6),
             
-            # 6. 資本の1階条件（簡略化）- FIXED: Kが対数変数  
-            Rk_gross - params.alpha * Y / max(np.exp(K), 1e-6),
+            # 6. 資本の1階条件（簡略化）- FIXED: Kが対数変数 + overflow対策
+            Rk_gross - params.alpha * Y / max(K_level, 1e-6),
             
             # 7. インフレーション（定常状態）
             pi_gross - params.pi_target,
@@ -201,8 +207,8 @@ class DSGEModel:
             # 12. Fisher方程式
             (1 + r_net_real) - i_nominal_gross / pi_gross,
             
-            # 13. 資本蓄積（定常状態）- FIXED: Kが対数変数
-            I - params.delta * np.exp(K),
+            # 13. 資本蓄積（定常状態）- FIXED: Kが対数変数 + overflow対策
+            I - params.delta * K_level,
             
             # 14. 投資の最適化（Euler equation for capital）- FIXED: 正しい定常状態条件
             (1 - params.tau_k) * Rk_gross + (1 - params.delta) - 1/params.beta,
@@ -659,18 +665,18 @@ class _SteadyStateComputer:
         ss_defaults.L = params.hours_steady  # 0.33
         
         # Production function consistency check (lines 323-329) - FIXED: より適切なスケール
-        # 生産関数 Y = K^α * L^(1-α) から適切なK, Lを計算
+        # 生産関数 Y = K^α * L^(1-α) から適切なK, Lを計算 + 数値安定性考慮
         target_Y = 1.0
         target_L = 0.33
         # Y = K^α * L^(1-α) => K = (Y / L^(1-α))^(1/α)
-        ss_defaults.K = (target_Y / (target_L**(1-params.alpha)))**(1/params.alpha)
-        ss_defaults.L = target_L
-        ss_defaults.Y = target_Y
+        calculated_K = (target_Y / (target_L**(1-params.alpha)))**(1/params.alpha)
         
-        # 整合性確認
-        Y_from_production = ss_defaults.K**params.alpha * ss_defaults.L**(1-params.alpha)
-        if abs(Y_from_production - ss_defaults.Y) > 0.01:
-            print(f"Warning: Production function mismatch: {Y_from_production:.3f} vs {ss_defaults.Y:.3f}")
+        # 数値安定性のため、Kを合理的な範囲に制限（年率GDP比で2-12倍程度）
+        ss_defaults.K = np.clip(calculated_K, 2.0, 12.0)
+        ss_defaults.L = target_L
+        
+        # Kを調整した場合、Yも再計算（生産関数で整合性確保）
+        ss_defaults.Y = ss_defaults.K**params.alpha * ss_defaults.L**(1-params.alpha)
         
         # 需要コンポーネントを再計算
         ss_defaults.I = params.delta * ss_defaults.K  # I = δK (steady state)
