@@ -27,8 +27,8 @@
         "government": {
             "gy_ratio": 0.20,
             "comment_gy_ratio": "Government spending to GDP ratio",
-            "by_ratio": 2.0,
-            "comment_by_ratio": "Government debt to annual GDP ratio",
+            "by_ratio": 8.0,
+            "comment_by_ratio": "Government debt to annual GDP ratio - FIXED for realistic quarterly target",
             "rho_g": 0.9,
             "comment_rho_g": "Government spending persistence",
             "phi_b": 0.1,
