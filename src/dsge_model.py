@@ -95,6 +95,7 @@ class SteadyState:
     def to_dict(self) -> Dict[str, float]: return {k:v for k,v in self.__dict__.items() if not k.startswith('_')}
     def __post_init__(self): 
         self.R_star_gross_real=(1+self.r_net_real) 
+        self.R_star_net_real=self.r_net_real  # Add net foreign interest rate
         self.i_nominal_net=self.i_nominal_gross-1
         mp=ModelParameters(); self.tau_l_effective=mp.tau_l_ss
         self.A_tfp=1.0; self.T_transfer=0.0
@@ -216,12 +217,13 @@ class DSGEModel:
             # 15. 利潤定義
             profit - (1 - mc) * Y,
             
-            # 16-18. 開放経済（簡略化 - 閉鎖経済近似）
+            # 16-19. 開放経済（簡略化 - 閉鎖経済近似）
             IM,  # 輸入 = 0（簡略化）
             EX,  # 輸出 = 0（簡略化）
             b_star,  # 対外純資産 = 0（簡略化）
+            q_val - 1.0,  # 実質為替レート = 1（閉鎖経済近似）
             
-            # 19. 総需要バランス（閉鎖経済版）
+            # 20. 総需要バランス（閉鎖経済版）
             Y - (C + I + G)
         ]
         
@@ -560,7 +562,8 @@ class DSGEModel:
         # GBC from docs: B_t = B_{t-1}/pi_t + G_t + T_transfer_t - total_tax_revenue_t
         eqs.append(sympy.Eq(B_real_t - (B_real_tm1/pi_t_gross + G_t + T_transfer_t - total_tax_rev_sym), 0)) # Eq 16
         eqs.append(sympy.Eq(log(G_t/ss.G) - p.rho_g*log(G_tm1/ss.G) - eps_g, 0)) # Eq 17
-        eqs.append(sympy.Eq(T_transfer_t - ss.T_transfer, 0)) # Eq 18
+        # REMOVED: T_transfer is constant, redundant equation
+        # eqs.append(sympy.Eq(T_transfer_t - ss.T_transfer, 0)) # Eq 18
 
         # --- Monetary Policy ---
         eqs.append(sympy.Eq(i_t_net_nominal - (p.rho_r*i_tm1_net_nominal + 
@@ -577,7 +580,8 @@ class DSGEModel:
         eqs.append(sympy.Eq(NX_t - (EX_t - IM_t), 0)) # Eq 26
         # NFA Accumulation (R_star_tm1_net_real is net real foreign rate on assets from t-1 to t)
         eqs.append(sympy.Eq(q_t*b_star_t - ((1+R_star_tm1_net_real)*q_t*b_star_tm1 + NX_t), 0)) # Eq 27
-        eqs.append(sympy.Eq(R_star_t_net_real - r_t_net_real, 0)) # Eq 28 (UIP assumption)
+        # REMOVED: R_star = r is redundant in closed economy approximation
+        # eqs.append(sympy.Eq(R_star_t_net_real - r_t_net_real, 0)) # Eq 28 (UIP assumption)
 
         # --- Market Clearing ---
         eqs.append(sympy.Eq(Y_t - (C_t + I_t + G_t + NX_t), 0)) # Eq 29
