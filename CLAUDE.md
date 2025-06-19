@@ -227,7 +227,17 @@ simulator = EnhancedTaxSimulator(
 - **NEVER** create "DummySteadyState" or similar placeholder objects
 - **NEVER** estimate tax breakdowns without empirical data sources
 
-### 2. FAIL FAST AND EXPLICIT
+### 2. NO FABRICATED PERFORMANCE METRICS OR BENCHMARKS
+- **NEVER** make up execution times, memory usage, or performance statistics
+- **NEVER** invent system requirements without actual testing
+- **NEVER** fabricate benchmark comparisons or speed claims
+- **ALWAYS** measure and report actual performance metrics
+- **ALWAYS** specify the test environment (hardware, OS, Python version)
+- **ALWAYS** include performance variability and failure modes
+- **Example of PROHIBITED practice**: "Simulation takes 10-30 seconds" without measurement
+- **Example of REQUIRED practice**: "Measured 0.01 seconds on M1 Pro macOS, may fail with Blanchard-Kahn warnings"
+
+### 3. FAIL FAST AND EXPLICIT
 ```python
 # ✅ CORRECT: Explicit failure
 if convergence_failed:
@@ -238,13 +248,13 @@ if convergence_failed:
     return default_steady_state  # DANGEROUS for research
 ```
 
-### 3. DATA SOURCE REQUIREMENTS
+### 4. DATA SOURCE REQUIREMENTS
 - All parameters must cite specific empirical sources
 - Tax data: Ministry of Finance Annual Reports
 - Macro data: Cabinet Office National Accounts  
 - Behavioral parameters: Published academic estimates with citations
 
-### 4. EXPLICIT ASSUMPTION DOCUMENTATION
+### 5. EXPLICIT ASSUMPTION DOCUMENTATION
 ```python
 def compute_tax_elasticity(self):
     """
