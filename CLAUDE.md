@@ -159,12 +159,18 @@ Always verify:
   - **scripts/debug/**: Debugging and diagnostic scripts
   - **scripts/validation/**: Model validation and comparison scripts
   - **scripts/examples/**: Example usage scripts
-- **docs/**: Project documentation
+- **docs/**: Project documentation (reorganized June 2025)
+  - **docs/USER_GUIDE.md**: Comprehensive user guide (formerly COMPREHENSIVE_DOCUMENTATION.md)
+  - **docs/EXAMPLES.md**: Working code examples (formerly ACCURATE_EXAMPLES.md)
+  - **docs/REFACTORING_SUMMARY.md**: Refactoring completion summary
   - **docs/technical/**: Technical documentation and theory
   - **docs/development/**: Development guides and setup instructions
+  - **docs/research/**: Policy research and independent fiscal institutions studies
 - **notebooks/**: Interactive Jupyter demonstrations and analysis
 - **results/**: Output files from simulation runs
 - **data/**: Supporting data files (if any)
+- **README.md**: Concise project overview (Japanese)
+- **README_EN.md**: English version of project overview
 
 The model is designed for policy analysis, so prioritize economic interpretability and robustness over computational speed. Always validate results against economic intuition and existing literature.
 
@@ -346,3 +352,25 @@ Before any analysis, verify:
 - **Assumption violations**: Clear warnings with literature citations
 
 Remember: Academic and policy credibility depends on rigorous methodology, not just working code.
+
+## Documentation Structure
+
+### Main Documentation Files
+- **README.md** - Project overview and quick start guide
+- **docs/USER_GUIDE.md** - Comprehensive user guide and API reference (formerly COMPREHENSIVE_DOCUMENTATION.md)
+- **docs/EXAMPLES.md** - Working code examples and scenarios (formerly ACCURATE_EXAMPLES.md)
+- **docs/REFACTORING_SUMMARY.md** - Modular architecture implementation summary
+
+### Documentation Organization
+- **docs/development/** - Developer setup and troubleshooting guides
+- **docs/technical/** - Technical specifications, linearization methods, architecture
+- **docs/research/** - Policy research, fiscal institution analysis, methodology
+- **docs/planning/** - Future development plans and integration roadmaps
+
+### File Reference Guidelines
+When helping users navigate the codebase:
+- Direct new users to **README.md** for quick start
+- Refer to **docs/USER_GUIDE.md** for comprehensive API usage
+- Use **docs/EXAMPLES.md** for working code examples
+- Point to **docs/technical/** for implementation details
+- Reference **docs/research/** for policy analysis background

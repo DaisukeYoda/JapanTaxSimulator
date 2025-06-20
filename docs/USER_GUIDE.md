@@ -1,114 +1,112 @@
-# Japan Tax Simulator - Comprehensive Documentation
+# 日本税制シミュレーター - 包括的ユーザーガイド
 
-[![PyPI version](https://badge.fury.io/py/japantaxsimulator.svg)](https://badge.fury.io/py/japantaxsimulator)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/DaisukeYoda/JapanTaxSimulator)
 
-## Table of Contents
+## 目次
 
-1. [Overview](#overview)
-2. [Quick Start](#quick-start)
-3. [Installation](#installation)
-4. [User Guides](#user-guides)
-5. [API Reference](#api-reference)
-6. [Research Guidelines](#research-guidelines)
-7. [Configuration](#configuration)
-8. [Examples](#examples)
-9. [Performance](#performance)
-10. [Troubleshooting](#troubleshooting)
-11. [Contributing](#contributing)
-12. [Academic Citations](#academic-citations)
+1. [概要](#概要)
+2. [クイックスタート](#クイックスタート)
+3. [インストール](#インストール)
+4. [使用方法](#使用方法)
+5. [API リファレンス](#api-リファレンス)
+6. [研究ガイドライン](#研究ガイドライン)
+7. [設定](#設定)
+8. [実例集](#実例集)
+9. [パフォーマンス](#パフォーマンス)
+10. [トラブルシューティング](#トラブルシューティング)
+11. [貢献](#貢献)
+12. [学術引用](#学術引用)
 
 ---
 
-## Overview
+## 概要
 
-The **Japan Tax Simulator** is a research-grade Dynamic Stochastic General Equilibrium (DSGE) model specifically designed for analyzing the macroeconomic impacts of tax policy changes on the Japanese economy. This comprehensive toolkit enables researchers, policymakers, and students to conduct rigorous quantitative analysis of fiscal policy scenarios.
+**日本税制シミュレーター**は、日本経済における税制政策変更のマクロ経済的影響を分析するために特別に設計された研究グレードの動学的確率的一般均衡（DSGE）モデルです。この包括的なツールキットにより、研究者、政策立案者、学生が財政政策シナリオの厳密な定量分析を実施できます。
 
-### 🎯 Key Features
+### 🎯 主要機能
 
-- **Research-Grade DSGE Model**: Full structural model with rigorous economic foundations
-- **Comprehensive Tax Analysis**: Four tax instruments (consumption, labor, capital, corporate)
-- **Multiple Linearization Methods**: Both simplified (educational) and full Klein (research) approaches
-- **Advanced Welfare Analysis**: Consumption equivalent variation and distributional impacts  
-- **International Economics**: Open economy features with trade and capital flows
-- **Academic Integrity**: No dummy values, explicit assumptions, empirical grounding
-- **Modular Architecture**: Clean, maintainable code suitable for collaboration
+- **研究グレードDSGEモデル**: 厳密な経済理論基盤を持つ完全構造モデル
+- **包括的税制分析**: 4つの税制手段（消費税、所得税、資本所得税、法人税）
+- **複数の線形化手法**: 簡素化版（教育用）と完全Klein法（研究用）の両方
+- **高度な厚生分析**: 消費等価変分と分配影響の分析
+- **国際経済学**: 貿易と資本フローを含む開放経済モデル
+- **学術的整合性**: ダミー値なし、明示的前提、実証的根拠
+- **モジュラーアーキテクチャ**: 共同作業に適したクリーンで保守可能なコード
 
-### 🏛️ Economic Model Structure
+### 🏛️ 経済モデル構造
 
-The model encompasses four main economic sectors:
+モデルは4つの主要経済部門から構成されます：
 
-1. **Household Sector**: Consumption-leisure choice with habit formation and tax responses
-2. **Firm Sector**: Production with Calvo price stickiness and investment adjustment costs  
-3. **Government Sector**: Fiscal policy with debt stabilization rules
-4. **Central Bank**: Taylor rule monetary policy with inflation targeting
+1. **家計部門**: 習慣形成と税制反応を含む消費・余暇選択
+2. **企業部門**: カルボ型価格粘着性と投資調整費用を持つ生産
+3. **政府部門**: 債務安定化ルールを持つ財政政策
+4. **中央銀行**: インフレ目標設定を持つテイラー則金融政策
 
-### 📊 Supported Tax Instruments
+### 📊 対応税制手段
 
-| Tax Type | Symbol | Baseline Rate | Description |
+| 税目 | 記号 | ベースライン税率 | 説明 |
 |----------|--------|---------------|-------------|
-| Consumption Tax | τc | 10% | Value-added tax on consumption |
-| Labor Income Tax | τl | 20% | Tax on wages and salaries |
-| Capital Income Tax | τk | 25% | Tax on dividends, interest, capital gains |
-| Corporate Tax | τf | 30% | Tax on corporate profits |
+| 消費税 | τc | 10% | 消費に対する付加価値税 |
+| 所得税 | τl | 20% | 賃金・給与に対する税 |
+| 資本所得税 | τk | 25% | 配当・利息・キャピタルゲインに対する税 |
+| 法人税 | τf | 30% | 企業利益に対する税 |
 
 ---
 
-## Quick Start
+## クイックスタート
 
-### 5-Minute Example: Consumption Tax Analysis
+### 5分で理解する例：消費税分析
 
-⚠️ **IMPORTANT**: This example uses the actual, tested API. Every line has been verified to work.
+⚠️ **重要**: この例では実際にテストされたAPIを使用しています。すべての行は動作確認済みです。
 
 ```python
-# Install: pip install japantaxsimulator (when released)
-# For now, use development version:
+# インストール: pip install japantaxsimulator (リリース時)
+# 現在は開発版を使用:
 
 from src.dsge_model import DSGEModel, ModelParameters
 from src.tax_simulator import EnhancedTaxSimulator, TaxReform
 
-# 1. Load baseline model (CRITICAL: must set steady_state)
+# 1. ベースラインモデルを読み込み（重要：steady_stateの設定が必須）
 params = ModelParameters.from_json('config/parameters.json')
 model = DSGEModel(params)
 steady_state = model.compute_steady_state()
-model.steady_state = steady_state  # REQUIRED!
+model.steady_state = steady_state  # 必須!
 
-# 2. Create simulator (start with simplified for stability)
+# 2. シミュレーター作成（安定性のため簡素化版で開始）
 simulator = EnhancedTaxSimulator(
     model, 
-    use_simple_linearization=True,   # Stable, educational
-    research_mode=False              # Fewer warnings
+    use_simple_linearization=True,   # 安定、教育用
+    research_mode=False              # 警告を減らす
 )
 
-# 3. Define tax reform scenario
+# 3. 税制改革シナリオの定義
 reform = TaxReform(
-    name="Consumption Tax +1pp",
-    tau_c=0.11,  # 10% → 11% (small change for stability)
+    name="消費税+1%ポイント",
+    tau_c=0.11,  # 10% → 11% (安定性のため小さな変更)
     implementation='permanent'
 )
 
-# 4. Run simulation
+# 4. シミュレーション実行
 results = simulator.simulate_reform(reform, periods=8)
 
-# 5. Analyze results (using actual API)
+# 5. 結果分析（実際のAPIを使用）
 baseline_gdp = results.baseline_path['Y'].mean()
 reform_gdp = results.reform_path['Y'].mean()
 gdp_impact = (reform_gdp / baseline_gdp - 1) * 100
 
-print(f"GDP Impact: {gdp_impact:.2f}%")
-print(f"Welfare Change: {results.welfare_change:.2%}")
-print(f"Available variables: {list(results.baseline_path.columns)}")
+print(f"GDP影響: {gdp_impact:.2f}%")
+print(f"厚生変化: {results.welfare_change:.2%}")
+print(f"利用可能変数: {list(results.baseline_path.columns)}")
 
-# 6. Visualize (using actual columns)
+# 6. 可視化（実際の列を使用）
 import matplotlib.pyplot as plt
-variables = ['Y', 'C', 'I', 'L']  # These exist in simplified model
+variables = ['Y', 'C', 'I', 'L']  # 簡素化モデルに存在する変数
 fig, axes = plt.subplots(2, 2, figsize=(10, 8))
 for i, var in enumerate(variables):
     ax = axes[i//2, i%2]
-    ax.plot(results.baseline_path[var], '--', label='Baseline', alpha=0.7)
-    ax.plot(results.reform_path[var], '-', label='Reform')
+    ax.plot(results.baseline_path[var], '--', label='ベースライン', alpha=0.7)
+    ax.plot(results.reform_path[var], '-', label='改革後')
     ax.set_title(var)
     ax.legend()
     ax.grid(True, alpha=0.3)
@@ -116,165 +114,165 @@ plt.tight_layout()
 plt.show()
 ```
 
-**Typical Output:**
+**典型的な出力:**
 ```
-GDP Impact: -0.12%
-Welfare Change: -0.15%
-Available variables: ['Y', 'C', 'I', 'L', 'K', 'G']
+GDP影響: -0.12%
+厚生変化: -0.15%
+利用可能変数: ['Y', 'C', 'I', 'L', 'K', 'G']
 ```
 
-### Performance Expectations
+### パフォーマンス期待値
 
-⚠️ **MEASURED ON**: macOS (M1 Pro, 16GB RAM, Python 3.12.3)
+⚠️ **測定環境**: macOS (M1 Pro, 16GB RAM, Python 3.12.3)
 
-- **Model Loading**: ~0.9 seconds
-- **Steady State Computation**: ~0.01 seconds ⚠️ *May fail with convergence warnings*
-- **Single Reform Simulation (8 periods)**: ~0.01 seconds (simplified linearization)
-- **Research-Grade Setup**: ~0.3 seconds (often fails due to Blanchard-Kahn conditions)
-- **Memory Usage**: ~130-210 MB for typical simulations
+- **モデル読み込み**: ~0.9秒
+- **定常状態計算**: ~0.01秒 ⚠️ *収束警告で失敗する可能性*
+- **単一改革シミュレーション（8期間）**: ~0.01秒（簡素化線形化）
+- **研究グレード設定**: ~0.3秒（Blanchard-Kahn条件により頻繁に失敗）
+- **メモリ使用量**: 一般的なシミュレーションで~130-210 MB
 
-⚠️ **Performance Notes:**
-- Research-grade Klein linearization frequently fails with "Blanchard-Kahn conditions not satisfied"
-- System automatically falls back to simplified linearization
-- Actual performance may vary significantly based on parameter values
+⚠️ **パフォーマンス注意事項:**
+- 研究グレードのKlein線形化は「Blanchard-Kahn条件が満たされない」エラーで頻繁に失敗
+- システムは自動的に簡素化線形化にフォールバック
+- 実際のパフォーマンスはパラメータ値によって大きく変動する可能性
 
 ---
 
-## Installation
+## インストール
 
-### System Requirements
+### システム要件
 
-⚠️ **ACTUAL REQUIREMENTS** (based on testing):
+⚠️ **実際の要件**（テストに基づく）:
 
-- **Python**: 3.11+ (tested on 3.12.3)
-- **Operating System**: macOS, Linux (Windows not tested)
-- **Memory**: 8GB+ RAM (uses ~200MB, but crashes may require more)
-- **Disk Space**: ~530MB total project (source code ~0.7MB)
+- **Python**: 3.11+（3.12.3でテスト済み）
+- **オペレーティングシステム**: macOS、Linux（Windowsは未テスト）
+- **メモリ**: 8GB以上のRAM（約200MB使用、クラッシュ時により多く必要）
+- **ディスク容量**: プロジェクト全体で約530MB（ソースコード約0.7MB）
 
-### Standard Installation (PyPI)
+### 標準インストール（PyPI）
 
 ```bash
-# Install from PyPI (recommended)
+# PyPIからインストール（推奨）
 pip install japantaxsimulator
 
-# Verify installation
-python -c "from japantaxsimulator import DSGEModel; print('✓ Installation successful')"
+# インストール確認
+python -c "from japantaxsimulator import DSGEModel; print('✓ インストール成功')"
 ```
 
-### Development Installation
+### 開発版インストール
 
-For contributors or users who want the latest features:
+貢献者や最新機能を使いたいユーザー向け:
 
 ```bash
-# Clone repository
+# リポジトリをクローン
 git clone https://github.com/DaisukeYoda/JapanTaxSimulator.git
 cd JapanTaxSimulator
 
-# Install with uv (recommended for speed)
+# uvでインストール（速度のため推奨）
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync
 
-# Verify with quick check
+# クイックチェックで確認
 uv run python quick_check.py
 ```
 
-### Optional Dependencies
+### オプション依存関係
 
 ```bash
-# For Jupyter notebook support
+# Jupyter notebookサポート用
 pip install jupyter matplotlib seaborn
 
-# For advanced visualization
+# 高度な可視化用
 pip install plotly bokeh
 
-# For parallel processing
+# 並列処理用
 pip install joblib
 ```
 
 ---
 
-## User Guides
+## ユーザーガイド
 
-### For Academic Researchers
+### 学術研究者向け
 
-**Recommended Setup for Publications:**
+**学術論文での推奨設定:**
 
 ```python
 import japantaxsimulator as jts
 
-# Always use research-grade configuration
+# 常に研究グレードの設定を使用
 config = jts.ResearchConfig(
-    linearization_method='klein',     # Full DSGE linearization
-    validate_assumptions=True,        # Check economic assumptions
-    require_citations=True,           # Track parameter sources
-    uncertainty_analysis=True         # Include confidence intervals
+    linearization_method='klein',     # 完全DSGE線形化
+    validate_assumptions=True,        # 経済学的仮定のチェック
+    require_citations=True,           # パラメータソースの追跡
+    uncertainty_analysis=True         # 信頼区間の含有
 )
 
 model = jts.DSGEModel.from_config('config/parameters.json')
 simulator = jts.ResearchTaxSimulator(model, config=config)
 ```
 
-**Best Practices:**
-- Always specify `use_simple_linearization=False` for research
-- Include sensitivity analysis for key parameters
-- Report method choice in publications
-- Validate results against empirical benchmarks
+**ベストプラクティス:**
+- 研究では常に `use_simple_linearization=False` を指定
+- 主要パラメータの感度分析を含める
+- 学術論文で手法選択を報告
+- 実証的ベンチマークに対して結果を検証
 
-### For Policy Analysts
+### 政策分析者向け
 
-**Quick Policy Scenario Analysis:**
+**クイック政策シナリオ分析:**
 
 ```python
-# Multiple scenario comparison
+# 複数シナリオ比較
 scenarios = {
-    'Current Policy': TaxReform(tau_c=0.10, tau_l=0.20),
-    'Consumption Tax Reform': TaxReform(tau_c=0.15, tau_l=0.20),
-    'Income Tax Reform': TaxReform(tau_c=0.10, tau_l=0.15),
-    'Comprehensive Reform': TaxReform(tau_c=0.12, tau_l=0.18, tau_f=0.25)
+    '現行政策': TaxReform(tau_c=0.10, tau_l=0.20),
+    '消費税改革': TaxReform(tau_c=0.15, tau_l=0.20),
+    '所得税改革': TaxReform(tau_c=0.10, tau_l=0.15),
+    '包括的改革': TaxReform(tau_c=0.12, tau_l=0.18, tau_f=0.25)
 }
 
 results = {}
 for name, reform in scenarios.items():
     results[name] = simulator.simulate_reform(reform)
 
-# Generate policy report
+# 政策レポート生成
 report = jts.PolicyReport(results)
 report.save_excel('policy_analysis.xlsx')
 report.save_pdf('policy_analysis.pdf')
 ```
 
-### For Educators
+### 教育者向け
 
-**Classroom-Friendly Examples:**
+**授業に適した例:**
 
 ```python
-# Use simplified model for teaching
+# 教育用に簡素化モデルを使用
 simulator = EnhancedTaxSimulator(
     model,
-    use_simple_linearization=True,   # Stable, predictable results
-    research_mode=False              # Fewer warnings for students
+    use_simple_linearization=True,   # 安定的で予測可能な結果
+    research_mode=False              # 学生向けに警告を削減
 )
 
-# Small tax changes for clear demonstration
+# 明確なデモンストレーション用の小さな税制変更
 demo_reform = TaxReform(
-    name="Small Consumption Tax Increase",
-    tau_c=0.11,  # 1 percentage point increase
+    name="小幅消費税増税",
+    tau_c=0.11,  # 1%ポイント増税
     implementation='permanent'
 )
 
 results = simulator.simulate_reform(demo_reform, periods=20)
-results.plot_educational_summary()  # Simplified visualization
+results.plot_educational_summary()  # 簡素化された可視化
 ```
 
 ---
 
-## API Reference
+## API リファレンス
 
-### Core Classes
+### コアクラス
 
 #### DSGEModel
 
-The main model class representing the Dynamic Stochastic General Equilibrium model.
+動学的確率的一般均衡モデルを表現するメインモデルクラス。
 
 ```python
 class DSGEModel:
@@ -289,28 +287,28 @@ class DSGEModel:
     def from_config(cls, config_path: str) -> 'DSGEModel'
 ```
 
-**Parameters:**
-- `params`: ModelParameters object containing all model calibration
-- `initial_guess_dict`: Optional custom starting values for solver
-- `baseline_ss`: Optional baseline steady state for comparative analysis
+**パラメータ:**
+- `params`: すべてのモデルキャリブレーションを含むModelParametersオブジェクト
+- `initial_guess_dict`: ソルバー用のオプションカスタム初期値
+- `baseline_ss`: 比較分析用のオプションベースライン定常状態
 
-**Returns:**
-- `SteadyState`: Object containing all steady state values
+**戻り値:**
+- `SteadyState`: すべての定常状態値を含むオブジェクト
 
-**Example:**
+**例:**
 ```python
-# Basic usage
+# 基本的な使用法
 model = DSGEModel(ModelParameters())
 steady_state = model.compute_steady_state()
 
-# With custom parameters
+# カスタムパラメータで
 params = ModelParameters(beta=0.98, tau_c=0.12)
 model = DSGEModel(params)
 ```
 
 #### TaxReform
 
-Class for specifying tax policy changes.
+税制政策変更を指定するためのクラス。
 
 ```python
 class TaxReform:
@@ -325,40 +323,40 @@ class TaxReform:
                  duration: Optional[int] = None)
 ```
 
-**Implementation Types:**
-- `'permanent'`: Tax change maintained indefinitely
-- `'temporary'`: Tax change for specified duration then reverts
-- `'phased'`: Gradual implementation over multiple periods
+**実装タイプ:**
+- `'permanent'`: 税制変更を無期限に維持
+- `'temporary'`: 指定期間の税制変更後に元に戻す
+- `'phased'`: 複数期間にわたって段階的に実装
 
-**Example:**
+**例:**
 ```python
-# Permanent consumption tax increase
+# 永続的な消費税増税
 reform1 = TaxReform(
-    name="VAT Reform",
+    name="付加価値税改革",
     tau_c=0.15,
     implementation='permanent'
 )
 
-# Temporary income tax cut with gradual phase-out
+# 段階的終了を伴う一時的所得税減税
 reform2 = TaxReform(
-    name="Economic Stimulus", 
+    name="経済刺激策", 
     tau_l=0.15,
     implementation='temporary',
-    duration=8  # 8 quarters
+    duration=8  # 8四半期
 )
 
-# Gradual corporate tax reform
+# 段階的法人税改革
 reform3 = TaxReform(
-    name="Corporate Tax Reform",
+    name="法人税改革",
     tau_f=0.25, 
     implementation='phased',
-    phase_in_periods=12  # Implemented over 3 years
+    phase_in_periods=12  # 3年間で実装
 )
 ```
 
 #### EnhancedTaxSimulator
 
-Main simulation engine for tax policy analysis.
+税制政策分析のメインシミュレーションエンジン。
 
 ```python
 class EnhancedTaxSimulator:
@@ -377,26 +375,26 @@ class EnhancedTaxSimulator:
                        periods: int = 40) -> pd.DataFrame
 ```
 
-**Parameters:**
-- `use_simple_linearization`: Choose linearization method
-  - `None`: Automatic selection based on scenario
-  - `True`: Simplified method (education/demo)
-  - `False`: Full Klein method (research)
-- `research_mode`: Enable research-grade validation and warnings
+**パラメータ:**
+- `use_simple_linearization`: 線形化手法の選択
+  - `None`: シナリオに基づく自動選択
+  - `True`: 簡素化手法（教育/デモ用）
+  - `False`: 完全Klein手法（研究用）
+- `research_mode`: 研究グレードの検証と警告を有効化
 
 #### SimulationResults
 
-Container for simulation output with analysis methods.
+分析メソッドを持つシミュレーション出力のコンテナ。
 
 ```python
 class SimulationResults:
-    # Core results
-    baseline_path: pd.DataFrame      # Baseline variable paths
-    reform_path: pd.DataFrame        # Reform scenario paths  
-    welfare_change: float            # Consumption equivalent variation
-    fiscal_impact: Dict              # Government budget effects
+    # コア結果
+    baseline_path: pd.DataFrame      # ベースライン変数パス
+    reform_path: pd.DataFrame        # 改革シナリオパス  
+    welfare_change: float            # 消費等価変分
+    fiscal_impact: Dict              # 政府予算への影響
     
-    # Analysis methods
+    # 分析メソッド
     def get_gdp_change(self) -> float
     def get_revenue_change(self) -> float
     def summary_statistics(self) -> Dict
@@ -404,144 +402,144 @@ class SimulationResults:
     def export_excel(self, filename: str) -> None
 ```
 
-### Utility Functions
+### ユーティリティ関数
 
-#### Model Loading and Validation
+#### モデル読み込みと検証
 
 ```python
-# Quick model loading
+# クイックモデル読み込み
 def load_baseline_model(config_path: str = 'config/parameters.json') -> DSGEModel
 
-# Parameter validation
+# パラメータ検証
 def validate_parameters(params: ModelParameters) -> List[str]
 
-# Economic consistency checks  
+# 経済学的一貫性チェック  
 def check_economic_relationships(steady_state: SteadyState) -> Dict[str, bool]
 ```
 
-#### Pre-defined Reform Scenarios
+#### 事前定義改革シナリオ
 
 ```python
-# Common reform scenarios for quick analysis
+# クイック分析用の一般的な改革シナリオ
 COMMON_TAX_REFORMS = {
-    'consumption_tax_increase_2pp': TaxReform(name="Consumption Tax +2pp", tau_c=0.12),
-    'income_tax_reduction_5pp': TaxReform(name="Income Tax -5pp", tau_l=0.15),
-    'revenue_neutral_shift': TaxReform(name="Revenue Neutral", tau_c=0.12, tau_l=0.15)
+    'consumption_tax_increase_2pp': TaxReform(name="消費税+2%ポイント", tau_c=0.12),
+    'income_tax_reduction_5pp': TaxReform(name="所得税-5%ポイント", tau_l=0.15),
+    'revenue_neutral_shift': TaxReform(name="税収中立シフト", tau_c=0.12, tau_l=0.15)
 }
 
-# Access pre-defined scenarios
+# 事前定義シナリオへのアクセス
 reform = COMMON_TAX_REFORMS['consumption_tax_increase_2pp']
 ```
 
 ---
 
-## Research Guidelines
+## 研究ガイドライン
 
-### Academic Standards and Integrity
+### 学術基準と研究倖理
 
-The Japan Tax Simulator is designed with strict academic integrity requirements:
+日本税制シミュレーターは厳格な学術的倖理要件で設計されています:
 
-#### 🚨 Research Mode Requirements
+#### 🚨 研究モードの要件
 
-**MANDATORY for academic publications:**
+**学術論文での必須事項:**
 
 ```python
-# Research-grade setup
+# 研究グレード設定
 simulator = EnhancedTaxSimulator(
     model,
-    use_simple_linearization=False,  # REQUIRED: Use Klein linearization
-    research_mode=True               # REQUIRED: Enable research validation
+    use_simple_linearization=False,  # 必須: Klein線形化を使用
+    research_mode=True               # 必須: 研究検証を有効化
 )
 
-# Verify research compliance
+# 研究コンプライアンスの確認
 validation = validate_research_compliance(simulator)
-assert validation['is_research_compliant'], "Research standards not met"
+assert validation['is_research_compliant'], "研究基準が満たされていません"
 ```
 
-#### No Dummy Values Policy
+#### ダミー値禁止ポリシー
 
-The simulator **never uses dummy or placeholder values**:
+シミュレーターは**ダミー値やプレースホルダー値を一切使用しません**:
 
-- ❌ **Prohibited**: DummySteadyState, default tax breakdowns, placeholder welfare calculations
-- ✅ **Required**: Empirically grounded parameters, explicit convergence, cited data sources
+- ❌ **禁止**: DummySteadyState、デフォルト税収内訳、プレースホルダー厚生計算
+- ✅ **必須**: 実証的根拠のあるパラメータ、明示的収束、出典ありデータソース
 
-#### Linearization Method Choice (Critical Decision)
+#### 線形化手法の選択（重要な決定）
 
-**Issue #30 Analysis Results:**
-- 83% of scenarios show >5% difference between simplified and full linearization
-- Maximum difference: 7.54% (income tax reduction scenario)
-- Recommendation threshold: 5% relative difference for significance
+**Issue #30分析結果:**
+- 83%のシナリオで簡素化線形化と完全線形化の間に5%超の差
+- 最大差: 7.54%（所得税減税シナリオ）
+- 推奨闾値: 有意性のため相対差5%
 
-**Method Selection Guide:**
+**手法選択ガイド:**
 
-| Research Purpose | Tax Change Size | Recommended Method | Rationale |
-|------------------|-----------------|-------------------|-----------|
-| Academic Papers | Any size | Full Klein | Theoretical rigor required |
-| Policy Analysis | ≥2pp | Full Klein | Accuracy requirements |
-| Policy Analysis | <2pp | Both + comparison | Robustness check |
-| Education/Demo | Any size | Simplified | Stability and clarity |
+| 研究目的 | 税制変更幅 | 推奨手法 | 根拠 |
+|------------------|-----------------|-------------------|----------|
+| 学術論文 | 任意のサイズ | 完全Klein | 理論的厳密性が必須 |
+| 政策分析 | ≥2pp | 完全Klein | 精度要件 |
+| 政策分析 | <2pp | 両方+比較 | 頼健性チェック |
+| 教育/デモ | 任意のサイズ | 簡素化 | 安定性と明確性 |
 
-#### Mandatory Reporting Requirements
+#### 義務的報告要件
 
-**In academic publications, always include:**
+**学術論文では常に含めるべき事項:**
 
-1. **Method specification**: 
+1. **手法の明示**: 
    ```
-   "Simulations use full Klein (2000) linearization method with 
-   Blanchard-Kahn conditions verified for solution uniqueness."
-   ```
-
-2. **Parameter sources**:
-   ```
-   "Labor supply elasticity (σ_l = 2.0) from Keane & Rogerson (2012).
-   Consumption elasticity (σ_c = 1.5) from Ogaki & Reinhart (1998)."
+   "シミュレーションは完全Klein (2000)線形化手法を使用し、
+   解の一意性に対してBlanchard-Kahn条件が検証されている。"
    ```
 
-3. **Sensitivity analysis**:
+2. **パラメータの出典**:
+   ```
+   "労働供給弾力性 (σ_l = 2.0) はKeane & Rogerson (2012)から。
+   消費弾力性 (σ_c = 1.5) はOgaki & Reinhart (1998)から。"
+   ```
+
+3. **感度分析**:
    ```python
-   # Required sensitivity check
+   # 必須の感度チェック
    sensitivity_params = ['sigma_c', 'theta_p', 'phi_pi']
    sensitivity_results = simulator.sensitivity_analysis(
        reform, sensitivity_params, variation_range=0.2
    )
    ```
 
-4. **Uncertainty bounds**:
+4. **不確実性の範囲**:
    ```python
-   # Monte Carlo analysis for robustness
+   # 祢健性のためのモンテカルロ分析
    mc_results = simulator.monte_carlo_simulation(
        reform, n_simulations=1000, 
        include_parameter_uncertainty=True
    )
    ```
 
-### Data Sources and Citations
+### データソースと引用
 
-#### Required Parameter Citations
+#### 必須パラメータ引用
 
-All model parameters must cite specific empirical sources:
+すべてのモデルパラメータは具体的な実証ソースを引用する必要があります:
 
 ```python
-# Example proper parameter documentation
+# 適切なパラメータ文書化の例
 PARAMETER_CITATIONS = {
-    'beta': 'Bank of Japan Quarterly Bulletin (2019) - real interest rate data',
-    'sigma_c': 'Ogaki & Reinhart (1998) - Japanese consumption estimation', 
-    'alpha': 'Cabinet Office National Accounts (2020) - labor share calculation',
-    'tau_c': 'Ministry of Finance Annual Report (2021) - consumption tax revenue',
-    'rho_a': 'OECD TFP estimates for Japan (1990-2020 average)'
+    'beta': '日本銀行四半期報 (2019) - 実質金利データ',
+    'sigma_c': 'Ogaki & Reinhart (1998) - 日本の消費推定', 
+    'alpha': '内閣府国民経済計算 (2020) - 労働分配率計算',
+    'tau_c': '財務省年次報告書 (2021) - 消費税税収',
+    'rho_a': 'OECD日本TFP推定 (1990-2020平均)'
 }
 ```
 
-#### Validation Against Empirical Benchmarks
+#### 実証的ベンチマークに対する検証
 
 ```python
-# Required empirical validation
+# 必須の実証検証
 def validate_against_data(steady_state: SteadyState) -> Dict[str, float]:
-    """Compare model ratios to Japanese economic data"""
+    """モデル比率を日本の経済データと比較"""
     targets = {
-        'C/Y_ratio': 0.60,  # Cabinet Office target
-        'I/Y_ratio': 0.20,  # OECD Japan average  
-        'Tax/Y_ratio': 0.30 # OECD fiscal data
+        'C/Y_ratio': 0.60,  # 内閣府目標値
+        'I/Y_ratio': 0.20,  # OECD日本平均  
+        'Tax/Y_ratio': 0.30 # OECD財政データ
     }
     
     errors = {}
@@ -556,9 +554,9 @@ def validate_against_data(steady_state: SteadyState) -> Dict[str, float]:
 
 ## Configuration
 
-### Model Parameters
+### モデルパラメータ
 
-The model is configured through `config/parameters.json`:
+モデルは `config/parameters.json` で設定します:
 
 ```json
 {
@@ -606,75 +604,75 @@ The model is configured through `config/parameters.json`:
 }
 ```
 
-### Parameter Descriptions
+### パラメータ説明
 
-#### Household Parameters
+#### 家計パラメータ
 
-| Parameter | Symbol | Default | Range | Description |
+| パラメータ | 記号 | デフォルト | 範囲 | 説明 |
 |-----------|--------|---------|-------|-------------|
-| beta | β | 0.99 | [0.95, 0.999] | Discount factor (quarterly) |
-| sigma_c | σ_c | 1.5 | [0.5, 3.0] | Intertemporal elasticity of substitution |
-| sigma_l | σ_l | 2.0 | [0.5, 5.0] | Frisch elasticity of labor supply |
-| habit | h | 0.3 | [0.0, 0.9] | Habit formation in consumption |
-| chi | χ | 1.0 | [0.1, 10.0] | Labor disutility parameter |
+| beta | β | 0.99 | [0.95, 0.999] | 割引因子（四半期） |
+| sigma_c | σ_c | 1.5 | [0.5, 3.0] | 時間間代替弾力性 |
+| sigma_l | σ_l | 2.0 | [0.5, 5.0] | 労働供給のFrisch弾力性 |
+| habit | h | 0.3 | [0.0, 0.9] | 消費の習慣形成 |
+| chi | χ | 1.0 | [0.1, 10.0] | 労働の不効用パラメータ |
 
-#### Firm Parameters
+#### 企業パラメータ
 
-| Parameter | Symbol | Default | Range | Description |
+| パラメータ | 記号 | デフォルト | 範囲 | 説明 |
 |-----------|--------|---------|-------|-------------|
-| alpha | α | 0.33 | [0.25, 0.40] | Capital share in production |
-| delta | δ | 0.025 | [0.015, 0.035] | Depreciation rate (quarterly) |
-| theta_p | θ_p | 0.75 | [0.5, 0.9] | Calvo price stickiness |
-| epsilon | ε | 6.0 | [3.0, 11.0] | Elasticity of substitution |
-| psi | ψ | 4.0 | [1.0, 10.0] | Investment adjustment cost |
+| alpha | α | 0.33 | [0.25, 0.40] | 生産における資本分配率 |
+| delta | δ | 0.025 | [0.015, 0.035] | 減価償却率（四半期） |
+| theta_p | θ_p | 0.75 | [0.5, 0.9] | カルボ型価格粘着性 |
+| epsilon | ε | 6.0 | [3.0, 11.0] | 代替弾力性 |
+| psi | ψ | 4.0 | [1.0, 10.0] | 投資調整費用 |
 
-### Modifying Parameters
+### パラメータの変更
 
 ```python
-# Load and modify parameters
+# パラメータを読み込み、変更
 params = ModelParameters.from_json('config/parameters.json')
 
-# Adjust specific parameters
-params.beta = 0.98        # Lower discount factor
-params.tau_c = 0.12       # Higher consumption tax
-params.sigma_c = 2.0      # Higher risk aversion
+# 特定パラメータの調整
+params.beta = 0.98        # 割引因子を低下
+params.tau_c = 0.12       # 消費税を高める
+params.sigma_c = 2.0      # リスク回避度を高める
 
-# Create model with modified parameters
+# 変更されたパラメータでモデル作成
 model = DSGEModel(params)
 ```
 
-### Calibration Validation
+### キャリブレーション検証
 
 ```python
-# Check parameter consistency
+# パラメータ一貫性チェック
 validation_errors = validate_parameters(params)
 if validation_errors:
-    print("Parameter validation failed:")
+    print("パラメータ検証失敗:")
     for error in validation_errors:
         print(f"  - {error}")
 
-# Check steady state targets
+# 定常状態目標値チェック
 steady_state = model.compute_steady_state()
 target_errors = model.check_steady_state(steady_state)
 
 for target, error in target_errors.items():
-    if abs(error) > 0.1:  # 10% tolerance
-        print(f"Target {target} missed by {error:.1%}")
+    if abs(error) > 0.1:  # 10%の許容範囲
+        print(f"目標 {target} が {error:.1%} ミス")
 ```
 
 ---
 
-## Examples
+## 実例集
 
-### Example 1: Basic Tax Reform Analysis
+### 例1: 基本的な税制改革分析
 
-**Scenario**: Analyze the impact of increasing consumption tax from 10% to 15%.
+**シナリオ**: 消費税を10%から15%に引き上げる影響を分析。
 
 ```python
 import japantaxsimulator as jts
 import matplotlib.pyplot as plt
 
-# Setup
+# 設定
 model = jts.DSGEModel.from_config('config/parameters.json')
 model.compute_steady_state()
 
@@ -684,17 +682,17 @@ simulator = jts.EnhancedTaxSimulator(
     research_mode=True
 )
 
-# Define reform
+# 改革を定義
 reform = jts.TaxReform(
     name="Consumption Tax Reform",
     tau_c=0.15,  # 10% → 15%
     implementation='permanent'
 )
 
-# Run simulation
+# シミュレーション実行
 results = simulator.simulate_reform(reform, periods=40)
 
-# Analyze results
+# 結果分析
 print("\n=== TAX REFORM ANALYSIS ===")
 print(f"Reform: {reform.name}")
 # Calculate impacts using actual API
@@ -960,11 +958,11 @@ plt.show()
 
 ---
 
-## Performance
+## パフォーマンス
 
-### Computational Performance
+### 計算パフォーマンス
 
-**Typical Execution Times** (MacBook Pro M1, 16GB RAM):
+**一般的な実行時間** (MacBook Pro M1, 16GB RAM):
 
 | Operation | Duration | Notes |
 |-----------|----------|-------|
@@ -974,13 +972,13 @@ plt.show()
 | Sensitivity analysis (3 parameters) | 30-90 sec | Multiple model solves |
 | Monte Carlo (500 simulations) | 5-15 min | Parallel processing available |
 
-**Memory Usage:**
+**メモリ使用量:**
 - Base model: ~20-30 MB
 - Single simulation: ~50-100 MB  
 - Large sensitivity analysis: ~200-500 MB
 - Monte Carlo simulations: ~1-2 GB
 
-### Performance Optimization Tips
+### パフォーマンス最適化のコツ
 
 1. **Use appropriate linearization method:**
    ```python
@@ -1012,7 +1010,7 @@ plt.show()
    quick_results = explorer.simulate_reform(reform)
    ```
 
-### Memory Management
+### メモリ管理
 
 For large-scale analysis:
 
@@ -1036,7 +1034,7 @@ for reform in reforms:
     del results  # Free memory
 ```
 
-### Scaling Guidelines
+### スケーリングガイドライン
 
 | Analysis Type | Recommended Hardware | Expected Time |
 |---------------|---------------------|---------------|
@@ -1047,11 +1045,11 @@ for reform in reforms:
 
 ---
 
-## Troubleshooting
+## トラブルシューティング
 
-### Common Issues and Solutions
+### よくある問題と解決策
 
-#### 1. Installation Problems
+#### 1. インストールの問題
 
 **Problem**: `ImportError: No module named 'japantaxsimulator'`
 
@@ -1073,7 +1071,7 @@ cd JapanTaxSimulator
 pip install -e .
 ```
 
-#### 2. Steady State Convergence Failures
+#### 2. 定常状態収束失敗
 
 **Problem**: `ValueError: SS comp failed: max residual: 1.234e-01`
 
@@ -1113,7 +1111,7 @@ steady_state = model.compute_steady_state(initial_guess_dict=initial_guess)
        print(f"Warning: High debt ratio {debt_ratio:.1f}")
    ```
 
-#### 3. Blanchard-Kahn Condition Violations
+#### 3. Blanchard-Kahn条件違反
 
 **Problem**: `Warning: Blanchard-Kahn conditions not satisfied`
 
@@ -1147,7 +1145,7 @@ print(f"Explosive eigenvalues: {explosive_count}")
    params.rho_a = min(params.rho_a, 0.99)  # Avoid unit roots
    ```
 
-#### 4. Numerical Instability
+#### 4. 数値不安定性
 
 **Problem**: `RuntimeWarning: overflow encountered in exp`
 
@@ -1164,7 +1162,7 @@ for var in ['K', 'L']:
         print(f"Warning: Extreme value {var} = {val}")
 ```
 
-#### 5. Research Compliance Warnings
+#### 5. 研究コンプライアンス警告
 
 **Problem**: `ResearchWarning: Using automatic model selection`
 
@@ -1178,7 +1176,7 @@ simulator = jts.EnhancedTaxSimulator(
 )
 ```
 
-#### 6. Performance Issues
+#### 6. パフォーマンスの問題
 
 **Problem**: Simulations taking too long
 
@@ -1207,7 +1205,7 @@ simulator = jts.EnhancedTaxSimulator(
    mp.set_start_method('spawn', force=True)  # macOS compatibility
    ```
 
-### Debug Mode
+### デバッグモード
 
 Enable detailed logging for troubleshooting:
 
@@ -1223,7 +1221,7 @@ simulator = jts.EnhancedTaxSimulator(model, research_mode=True)
 results = simulator.simulate_reform(reform)
 ```
 
-### Getting Help
+### サポートを受ける
 
 1. **Check documentation**: [https://japantaxsimulator.readthedocs.io](https://japantaxsimulator.readthedocs.io)
 2. **GitHub Issues**: [https://github.com/DaisukeYoda/JapanTaxSimulator/issues](https://github.com/DaisukeYoda/JapanTaxSimulator/issues)
@@ -1231,9 +1229,9 @@ results = simulator.simulate_reform(reform)
 
 ---
 
-## Contributing
+## 貢献
 
-### Development Setup
+### 開発環境の設定
 
 ```bash
 # Clone repository
@@ -1253,7 +1251,7 @@ uv run pytest tests/
 uv run pytest tests/integration/
 ```
 
-### Code Quality Standards
+### コード品質基準
 
 ```bash
 # Linting
@@ -1267,7 +1265,7 @@ uv run mypy src/
 uv run pytest --cov=src tests/
 ```
 
-### Contributing Guidelines
+### 貢献ガイドライン
 
 1. **Research integrity**: All contributions must maintain academic standards
 2. **Documentation**: New features require comprehensive documentation
@@ -1277,9 +1275,9 @@ uv run pytest --cov=src tests/
 
 ---
 
-## Academic Citations
+## 学術引用
 
-### Citing This Package
+### このパッケージの引用
 
 **For academic publications:**
 
@@ -1300,25 +1298,25 @@ Yoda, D. (2025). Japan Tax Simulator: A Research-Grade DSGE Model for Tax Policy
 Version 1.0.0. Python Package. https://github.com/DaisukeYoda/JapanTaxSimulator
 ```
 
-### Theoretical Foundations
+### 理論的基盤
 
-The model builds on established DSGE literature:
+モデルは確立されたDSGE文献に基づいています:
 
-**Core DSGE Theory:**
+**コアDSGE理論:**
 - Galí, J. (2015). *Monetary Policy, Inflation, and the Business Cycle*. Princeton University Press.
 - Woodford, M. (2003). *Interest and Prices*. Princeton University Press.
 
-**Numerical Methods:**
+**数値手法:**
 - Klein, P. (2000). "Using the generalized Schur form to solve a multivariate linear rational expectations model." *Journal of Economic Dynamics and Control*, 24(10), 1405-1423.
 - Sims, C. A. (2002). "Solving linear rational expectations models." *Computational Economics*, 20(1-2), 1-20.
 
-**Tax Policy Applications:**
+**税制政策適用:**
 - Trabandt, M., & Uhlig, H. (2011). "The Laffer curve revisited." *Journal of Monetary Economics*, 58(4), 305-327.
 - Mendoza, E. G., Razin, A., & Tesar, L. L. (1994). "Effective tax rates in macroeconomics: Cross-country estimates of tax rates on factor incomes and consumption." *Journal of Monetary Economics*, 34(3), 297-323.
 
-### Japanese Economy Calibration
+### 日本経済キャリブレーション
 
-**Data Sources:**
+**データソース:**
 - Cabinet Office, Government of Japan. Economic and Social Research Institute (ESRI). National Accounts.
 - Bank of Japan. Quarterly Bulletin and Economic Statistics.
 - Ministry of Finance. Annual Report on Japanese Public Finance.
@@ -1326,19 +1324,19 @@ The model builds on established DSGE literature:
 
 ---
 
-## License
+## ライセンス
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MITライセンス - 詳細は[LICENSE](LICENSE)ファイルを参照してください。
 
 ---
 
-## Development History
+## 開発履歴
 
-**Current Status**: Version 0.1.0 (Development)
+**現在の状態**: バージョン 0.1.0 (開発中)
 
 This project is currently in development phase, preparing for initial PyPI release. Major milestones from Git history:
 
-### Recent Development (2025-06)
+### 最近の開発 (2025-06)
 - **Issue #44**: 🚨 CRITICAL: 財政ルール破綻修正とDSGE経済関係の正常化 
 - **Issue #42**: Complete Modular Architecture Implementation and Documentation Cleanup
 - **Issue #34**: Notebook環境の再構築と教育・研究・政策分析機能の改善
@@ -1347,13 +1345,13 @@ This project is currently in development phase, preparing for initial PyPI relea
 - **Issue #30**: 簡略化線形化モデルの影響評価と文書化
 - **Issue #20**: Notebookの動作確認と機能拡充
 
-### Planned Releases
+### 予定リリース
 - **v0.2.0**: PyPI初回リリース (予定)
 - **v1.0.0**: 正式版リリース (予定)
 
 ---
 
-## Contact
+## 連絡先
 
 - **Author**: Daisuke Yoda
 - **Email**: [contact@japantaxsimulator.org](mailto:contact@japantaxsimulator.org)
