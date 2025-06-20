@@ -1,4 +1,4 @@
-# uv Usage Guide for JapanTaxSimulator
+# JapanTaxSimulator における uv 使用ガイド
 
 ## 基本的な使い方
 

@@ -1,69 +1,69 @@
-# Modular Architecture Guide
-## Japan Tax Simulator - New Component-Based Design
+# モジュラーアーキテクチャガイド
+## 日本税制シミュレーター - 新しいコンポーネントベース設計
 
-**Version:** 2.0 (Post-Refactoring)  
-**Date:** June 2025  
-**Status:** ✅ Production Ready
+**バージョン:** 2.0 (リファクタリング後)  
+**日付:** 2025年6月  
+**ステータス:** ✅ 本番環境対応済み
 
 ---
 
-## 🏗️ ARCHITECTURE OVERVIEW
+## 🏗️ アーキテクチャ概要
 
-The Japan Tax Simulator has been completely refactored into a **clean, modular architecture** that separates concerns and provides both **backward compatibility** and **enhanced functionality**.
+日本税制シミュレーターは、関心事の分離を実現し、**後方互換性**と**機能拡張**の両方を提供する**クリーンなモジュラーアーキテクチャ**に完全にリファクタリングされました。
 
-### High-Level Structure
+### 高レベル構造
 ```
 src/
-├── simulation/          # Tax policy simulation engines
-├── analysis/           # Economic analysis modules  
-├── utils_new/          # Enhanced utilities and data structures
-├── models/             # DSGE model implementations
-└── tax_simulator.py    # Backward compatibility facade
+├── simulation/          # 税制政策シミュレーションエンジン
+├── analysis/           # 経済分析モジュール  
+├── utils_new/          # 強化されたユーティリティとデータ構造
+├── models/             # DSGEモデル実装
+└── tax_simulator.py    # 後方互換性ファサード
 ```
 
 ---
 
-## 📦 MODULE SPECIFICATIONS
+## 📦 モジュール仕様
 
-### 1. **Simulation Module** (`src/simulation/`)
+### 1. **シミュレーションモジュール** (`src/simulation/`)
 
-#### `base_simulator.py` - Core Infrastructure
-**Purpose:** Provides foundational simulation infrastructure
+#### `base_simulator.py` - コアインフラストラクチャ
+**目的:** 基本的なシミュレーションインフラストラクチャを提供
 
-**Key Classes:**
-- `BaseSimulationEngine`: Abstract base for all simulators
-- `SimulationConfig`: Configuration management
-- `ValidationEngine`: Parameter and result validation
+**主要クラス:**
+- `BaseSimulationEngine`: すべてのシミュレーターの抽象基底クラス
+- `SimulationConfig`: 設定管理
+- `ValidationEngine`: パラメータと結果の検証
 
-**Features:**
-- Comprehensive parameter validation
-- Economic consistency checking
-- Abstract interface for simulation engines
-- Result caching infrastructure
+**機能:**
+- 包括的なパラメータ検証
+- 経済的整合性チェック
+- シミュレーションエンジンの抽象インターフェース
+- 結果キャッシュインフラストラクチャ
 
-**Usage:**
+**使用方法:**
 ```python
 from simulation.base_simulator import BaseSimulationEngine, SimulationConfig
 
 config = SimulationConfig(periods=40, validate_results=True)
-# Extend BaseSimulationEngine for custom simulators
+# カスタムシミュレーター用にBaseSimulationEngineを拡張
 ```
 
-#### `enhanced_simulator.py` - Full-Featured Implementation
-**Purpose:** Advanced DSGE simulation with Klein linearization
+#### `enhanced_simulator.py` - フル機能実装
+**目的:** Klein線形化を用いた高度なDSGEシミュレーション
 
-**Key Classes:**
-- `EnhancedSimulationEngine`: Complete simulation implementation
-- `LinearizationManager`: Handles different linearization approaches
-- `TransitionComputer`: Computes dynamic transition paths
+**主要クラス:**
+- `EnhancedSimulationEngine`: 完全なシミュレーション実装
+- `LinearizationManager`: 異なる線形化アプローチの処理
+- `TransitionComputer`: 動的遷移パスの計算
 
-**Features:**
-- Klein vs simplified linearization
-- Multiple reform implementation strategies (permanent, temporary, phased)
-- Blanchard-Kahn condition validation
-- Comprehensive transition dynamics
+**機能:**
+- Klein対簡略化線形化
+- 複数の改革実装戦略（恒久的、一時的、段階的）
+- Blanchard-Kahn条件の検証
+- 包括的な遷移動学
 
-**Usage:**
+**使用方法:**
 ```python
 from simulation.enhanced_simulator import EnhancedSimulationEngine, LinearizationConfig
 
@@ -74,24 +74,24 @@ engine = EnhancedSimulationEngine(
 )
 ```
 
-### 2. **Analysis Module** (`src/analysis/`)
+### 2. **分析モジュール** (`src/analysis/`)
 
-#### `welfare_analysis.py` - Welfare Impact Assessment
-**Purpose:** Rigorous welfare analysis with multiple methodologies
+#### `welfare_analysis.py` - 厚生影響評価
+**目的:** 複数の手法による厳密な厚生分析
 
-**Key Classes:**
-- `WelfareAnalyzer`: Main welfare computation engine
-- `WelfareDecomposition`: Channel-by-channel welfare analysis
-- `ConsumptionEquivalentMethod`: Primary welfare methodology
-- `LucasWelfareMethod`: Alternative welfare approach
+**主要クラス:**
+- `WelfareAnalyzer`: メイン厚生計算エンジン
+- `WelfareDecomposition`: チャネル別厚生分析
+- `ConsumptionEquivalentMethod`: 主要厚生手法
+- `LucasWelfareMethod`: 代替厚生アプローチ
 
-**Features:**
-- Multiple welfare methodologies
-- Consumption equivalent calculations
-- Uncertainty quantification (bootstrap)
-- Welfare decomposition by economic channel
+**機能:**
+- 複数の厚生手法
+- 消費等価計算
+- 不確実性定量化（ブートストラップ）
+- 経済チャネル別厚生分解
 
-**Usage:**
+**使用方法:**
 ```python
 from analysis.welfare_analysis import WelfareAnalyzer, WelfareConfig
 
@@ -104,22 +104,22 @@ analyzer = WelfareAnalyzer(
 result = analyzer.analyze_welfare_impact(baseline_path, reform_path)
 ```
 
-#### `fiscal_impact.py` - Government Budget Analysis
-**Purpose:** Comprehensive fiscal impact assessment
+#### `fiscal_impact.py` - 政府予算分析
+**目的:** 包括的な財政影響評価
 
-**Key Classes:**
-- `FiscalAnalyzer`: Main fiscal analysis engine
-- `RevenueCalculator`: Detailed tax revenue calculations
-- `DebtSustainabilityAnalyzer`: Government debt dynamics
-- `FiscalMultiplierCalculator`: Fiscal multiplier effects
+**主要クラス:**
+- `FiscalAnalyzer`: メイン財政分析エンジン
+- `RevenueCalculator`: 詳細な税収計算
+- `DebtSustainabilityAnalyzer`: 政府債務動学
+- `FiscalMultiplierCalculator`: 財政乗数効果
 
-**Features:**
-- Behavioral response adjustments
-- Debt sustainability analysis
-- Present value calculations
-- Multiple tax base calculations
+**機能:**
+- 行動反応調整
+- 債務持続可能性分析
+- 現在価値計算
+- 複数の税源計算
 
-**Usage:**
+**使用方法:**
 ```python
 from analysis.fiscal_impact import FiscalAnalyzer, FiscalConfig
 
@@ -132,91 +132,91 @@ analyzer = FiscalAnalyzer(
 result = analyzer.analyze_fiscal_impact(baseline_path, reform_path, ...)
 ```
 
-### 3. **Enhanced Utilities** (`src/utils_new/`)
+### 3. **強化ユーティリティ** (`src/utils_new/`)
 
-#### `reform_definitions.py` - Tax Reform Specifications
-**Purpose:** Robust tax reform definition and validation
+#### `reform_definitions.py` - 税制改革仕様
+**目的:** 堅牢な税制改革定義と検証
 
-**Key Classes:**
-- `TaxReform`: Main reform specification class
-- `SpecializedTaxReforms`: Factory for common reform types
-- `COMMON_REFORMS`: Pre-defined reform scenarios
+**主要クラス:**
+- `TaxReform`: メイン改革仕様クラス
+- `SpecializedTaxReforms`: 共通改革タイプのファクトリー
+- `COMMON_REFORMS`: 事前定義改革シナリオ
 
-**Features:**
-- Comprehensive validation (tax rate bounds, implementation parameters)
-- Multiple implementation strategies
-- Reform comparison utilities
-- Pre-defined common scenarios
+**機能:**
+- 包括的検証（税率境界、実装パラメータ）
+- 複数の実装戦略
+- 改革比較ユーティリティ
+- 事前定義共通シナリオ
 
-**Usage:**
+**使用方法:**
 ```python
 from utils_new.reform_definitions import TaxReform, SpecializedTaxReforms
 
-# Direct specification
-reform = TaxReform('Consumption Tax Increase', tau_c=0.12, implementation='permanent')
+# 直接指定
+reform = TaxReform('消費税増税', tau_c=0.12, implementation='permanent')
 
-# Using factory methods
-reform = SpecializedTaxReforms.consumption_tax_increase('Test Reform', 0.12)
+# ファクトリーメソッドの使用
+reform = SpecializedTaxReforms.consumption_tax_increase('テスト改革', 0.12)
 ```
 
-#### `result_containers.py` - Simulation Results Management
-**Purpose:** Advanced result storage and analysis
+#### `result_containers.py` - シミュレーション結果管理
+**目的:** 高度な結果保存と分析
 
-**Key Classes:**
-- `SimulationResults`: Enhanced results container
-- `ComparisonResults`: Multi-scenario comparison
-- `WelfareAnalysis`: Detailed welfare impact results
+**主要クラス:**
+- `SimulationResults`: 拡張結果コンテナ
+- `ComparisonResults`: マルチシナリオ比較
+- `WelfareAnalysis`: 詳細厚生影響結果
 
-**Features:**
-- Impulse response function calculation
-- Peak effect identification
-- Convergence analysis
-- Summary statistics generation
+**機能:**
+- インパルス応答関数計算
+- ピーク効果特定
+- 収束分析
+- 要約統計生成
 
-**Usage:**
+**使用方法:**
 ```python
 from utils_new.result_containers import SimulationResults
 
-# Automatic computation of derived statistics
+# 派生統計の自動計算
 irf = results.get_impulse_responses(['Y', 'C', 'I'])
 peaks = results.get_peak_effects(['Y', 'C'])
 convergence = results.get_convergence_analysis(['Y', 'C'])
 ```
 
-### 4. **Core Models** (`src/models/`)
+### 4. **コアモデル** (`src/models/`)
 
-#### Unchanged Structure
-- `DSGEModel`: Main DSGE model implementation
-- `simple_dsge.py`: Simplified educational model
+#### 変更なし構造
+- `DSGEModel`: メインDSGEモデル実装
+- `simple_dsge.py`: 簡略化教育モデル
 
-### 5. **Backward Compatibility** (`src/tax_simulator.py`)
+### 5. **後方互換性** (`src/tax_simulator.py`)
 
-#### `EnhancedTaxSimulator` - Facade Pattern
-**Purpose:** Maintains exact compatibility with legacy code
+#### `EnhancedTaxSimulator` - ファサードパターン
+**目的:** レガシーコードとの完全互換性維持
 
-**Features:**
-- Identical interface to original implementation
-- Delegates to new modular components
-- Maintains all legacy method signatures
-- Provides migration warnings for new development
+**機能:**
+- 元の実装と同一のインターフェース
+- 新しいモジュラーコンポーネントへの委譲
+- すべてのレガシーメソッドシグネチャの維持
+- 新規開発向け移行警告の提供
 
-**Usage (Legacy):**
+**使用方法（レガシー）:**
 ```python
-# This exact code continues to work unchanged
+# この正確なコードは変更なしで動作し続けます
 from tax_simulator import EnhancedTaxSimulator, TaxReform
 
 simulator = EnhancedTaxSimulator(model)
-reform = TaxReform('Test', tau_c=0.12, implementation='permanent')
+reform = TaxReform('テスト', tau_c=0.12, implementation='permanent')
 results = simulator.simulate_reform(reform, periods=40)
 ```
 
 ---
 
-## 🔄 MIGRATION PATTERNS
+## 🔄 移行パターン
 
-### From Legacy to Modular
+### レガシーからモジュラーへ
 
-#### Old Way (Still Works):
+#### 従来の方法（まだ動作します）:
 ```python
 from tax_simulator import EnhancedTaxSimulator, TaxReform
 
@@ -224,13 +224,13 @@ simulator = EnhancedTaxSimulator(model)
 results = simulator.simulate_reform(reform)
 ```
 
-#### New Way (Recommended):
+#### 新しい方法（推奨）:
 ```python
 from simulation.enhanced_simulator import EnhancedSimulationEngine
 from analysis.welfare_analysis import WelfareAnalyzer
 from utils_new.reform_definitions import TaxReform
 
-# More control and transparency
+# より多くの制御と透明性
 engine = EnhancedSimulationEngine(model, research_mode=True)
 welfare = WelfareAnalyzer()
 
@@ -238,17 +238,17 @@ results = engine.simulate_reform(reform)
 welfare_result = welfare.analyze_welfare_impact(results.baseline_path, results.reform_path)
 ```
 
-### Research-Grade Usage:
+### 研究グレード使用:
 ```python
 from simulation.enhanced_simulator import EnhancedSimulationEngine, LinearizationConfig
 from analysis.welfare_analysis import WelfareAnalyzer, WelfareConfig
 from analysis.fiscal_impact import FiscalAnalyzer, FiscalConfig
 
-# Explicit configuration for reproducibility
+# 再現可能性のための明示的設定
 engine = EnhancedSimulationEngine(
     baseline_model=model,
     linearization_config=LinearizationConfig(
-        method='klein',  # Explicit Klein linearization
+        method='klein',  # 明示的Klein線形化
         validate_bk_conditions=True
     ),
     research_mode=True
@@ -257,7 +257,7 @@ engine = EnhancedSimulationEngine(
 welfare = WelfareAnalyzer(
     config=WelfareConfig(
         methodology='consumption_equivalent',
-        include_uncertainty=True,  # Bootstrap confidence intervals
+        include_uncertainty=True,  # ブートストラップ信頼区間
         confidence_level=0.95
     )
 )
@@ -265,7 +265,7 @@ welfare = WelfareAnalyzer(
 fiscal = FiscalAnalyzer(
     config=FiscalConfig(
         include_behavioral_responses=True,
-        consumption_tax_elasticity=-0.8,  # Explicit calibration
+        consumption_tax_elasticity=-0.8,  # 明示的キャリブレーション
         labor_tax_elasticity=-0.4
     )
 )
@@ -273,118 +273,118 @@ fiscal = FiscalAnalyzer(
 
 ---
 
-## 🎯 DESIGN PRINCIPLES
+## 🎯 設計原則
 
-### 1. **Single Responsibility**
-Each module has one clear purpose:
-- `simulation/`: Tax policy simulation
-- `analysis/`: Economic impact analysis
-- `utils_new/`: Data structures and utilities
+### 1. **単一責任**
+各モジュールは一つの明確な目的を持ちます:
+- `simulation/`: 税制政策シミュレーション
+- `analysis/`: 経済影響分析
+- `utils_new/`: データ構造とユーティリティ
 
-### 2. **Explicit Configuration**
-All behavior is configurable with sensible defaults:
+### 2. **明示的設定**
+すべての動作は合理的なデフォルトで設定可能です:
 ```python
 SimulationConfig(periods=40, validate_results=True)
 WelfareConfig(methodology='consumption_equivalent', include_uncertainty=False)
 LinearizationConfig(method='auto', fallback_to_simple=True)
 ```
 
-### 3. **Research Transparency**
-All methodological choices are explicit and documented:
-- Welfare calculation methods clearly specified
-- Linearization approaches transparently selected
-- Tax elasticity parameters explicitly provided
+### 3. **研究の透明性**
+すべての手法論的選択は明示的で文書化されています:
+- 厚生計算手法の明確な指定
+- 線形化アプローチの透明な選択
+- 税弾力性パラメータの明示的提供
 
-### 4. **Backward Compatibility**
-Legacy code works unchanged through facade pattern:
-- Existing notebooks continue to work
-- Original API preserved exactly
-- Migration path provided for new features
+### 4. **後方互換性**
+レガシーコードはファサードパターンで変更なしで動作します:
+- 既存のノートブックは動作し続けます
+- 元のAPIが正確に保存されています
+- 新機能への移行パスが提供されています
 
-### 5. **Validation Throughout**
-Comprehensive validation at every level:
-- Parameter bounds checking
-- Economic consistency validation
-- Result quality assessment
-- Research integrity warnings
+### 5. **全体を通した検証**
+あらゆるレベルでの包括的検証:
+- パラメータ境界チェック
+- 経済的整合性検証
+- 結果品質評価
+- 研究整合性警告
 
 ---
 
-## 🔧 EXTENSION POINTS
+## 🔧 拡張ポイント
 
-### Adding New Simulation Methods
+### 新しいシミュレーション手法の追加
 ```python
 from simulation.base_simulator import BaseSimulationEngine
 
 class CustomSimulationEngine(BaseSimulationEngine):
     def simulate_reform(self, reform, periods=None):
-        # Implement custom simulation logic
+        # カスタムシミュレーションロジックの実装
         pass
 ```
 
-### Adding New Welfare Methods
+### 新しい厚生手法の追加
 ```python
 from analysis.welfare_analysis import WelfareMethodology
 
 class CustomWelfareMethod(WelfareMethodology):
     def compute_welfare_change(self, baseline_path, reform_path, config):
-        # Implement custom welfare calculation
+        # カスタム厚生計算の実装
         pass
 ```
 
-### Adding New Analysis Modules
+### 新しい分析モジュールの追加
 ```python
 # src/analysis/distributional_analysis.py
 class DistributionalAnalyzer:
     def analyze_distributional_impact(self, results):
-        # Implement distributional analysis
+        # 所得分配分析の実装
         pass
 ```
 
 ---
 
-## 📊 PERFORMANCE CHARACTERISTICS
+## 📊 パフォーマンス特性
 
-### Memory Usage
-- **Baseline**: Similar to original implementation
-- **Caching**: Reduced computation through result caching
-- **Modular Loading**: Only load modules you need
+### メモリ使用量
+- **ベースライン**: 元の実装と同等
+- **キャッシュ**: 結果キャッシュによる計算減少
+- **モジュラー読み込み**: 必要なモジュールのみ読み込み
 
-### Computation Speed
-- **First Run**: Slightly slower due to enhanced validation
-- **Cached Results**: Much faster for repeated simulations
-- **Parallel Potential**: Modular design enables future parallelization
+### 計算速度
+- **初回実行**: 強化された検証によりわずかに低速
+- **キャッシュ結果**: 繰り返しシミュレーションでは大幅に高速
+- **並列化可能性**: モジュラー設計が将来の並列化を可能に
 
-### Code Maintenance
-- **File Size**: No file >400 lines (was 1,578 lines)
-- **Method Length**: All methods <30 lines
-- **Test Coverage**: Each module independently testable
+### コード保守
+- **ファイルサイズ**: 400行を超えるファイルなし（以前は1,578行）
+- **メソッド長**: すべてのメソッドが30行未満
+- **テストカバレッジ**: 各モジュールが独立してテスト可能
 
 ---
 
-## 🧪 TESTING STRATEGY
+## 🧪 テスト戦略
 
-### Unit Tests
-Each module can be tested independently:
+### ユニットテスト
+各モジュールを独立してテスト可能:
 ```python
-# Test simulation engine
+# シミュレーションエンジンのテスト
 def test_enhanced_simulation_engine():
     engine = EnhancedSimulationEngine(model)
     results = engine.simulate_reform(simple_reform)
     assert results.welfare_change is not None
 
-# Test welfare analysis
+# 厚生分析のテスト
 def test_welfare_analyzer():
     analyzer = WelfareAnalyzer()
     result = analyzer.analyze_welfare_impact(baseline, reform)
     assert result.consumption_equivalent is not None
 ```
 
-### Integration Tests
-Test module interactions:
+### 統合テスト
+モジュール間の相互作用をテスト:
 ```python
 def test_full_workflow():
-    # Test complete simulation pipeline
+    # 完全なシミュレーションパイプラインのテスト
     engine = EnhancedSimulationEngine(model)
     analyzer = WelfareAnalyzer()
     
@@ -395,11 +395,11 @@ def test_full_workflow():
     assert welfare_results.methodology == 'consumption_equivalent'
 ```
 
-### Backward Compatibility Tests
-Ensure legacy code continues to work:
+### 後方互換性テスト
+レガシーコードの継続動作を保証:
 ```python
 def test_legacy_interface():
-    # Test that old code still works
+    # 古いコードがまだ動作することをテスト
     from tax_simulator import EnhancedTaxSimulator, TaxReform
     
     simulator = EnhancedTaxSimulator(model)
@@ -411,15 +411,15 @@ def test_legacy_interface():
 
 ---
 
-## 📚 CONCLUSION
+## 📚 結論
 
-The modular architecture provides:
+モジュラーアーキテクチャは以下を提供します:
 
-1. **✅ Better Organization**: Clear separation of concerns
-2. **✅ Enhanced Functionality**: More analysis options and configurations
-3. **✅ Research Standards**: Explicit methodologies and validation
-4. **✅ Maintainability**: Smaller, focused modules
-5. **✅ Extensibility**: Easy to add new components
-6. **✅ Backward Compatibility**: Existing code continues to work
+1. **✅ 優れた組織化**: 関心事の明確な分離
+2. **✅ 機能強化**: より多くの分析オプションと設定
+3. **✅ 研究標準**: 明示的な手法論と検証
+4. **✅ 保守性**: 小さく焦点を絞ったモジュール
+5. **✅ 拡張性**: 新しいコンポーネントの簡単な追加
+6. **✅ 後方互換性**: 既存コードの継続動作
 
-This design positions the Japan Tax Simulator as a **professional, research-grade tool** suitable for academic research, policy analysis, and educational use.
+この設計により、日本税制シミュレーターは学術研究、政策分析、教育用途に適した**プロフェッショナルな研究グレードツール**として位置づけられます。
