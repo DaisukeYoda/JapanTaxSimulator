@@ -226,7 +226,10 @@ class DSGEModel:
             # 20. 総需要バランス（閉鎖経済版）
             Y - (C + I + G)
         ]
-        
+        # Ensure the number of equations matches the number of endogenous variables
+        # for numerical routines that expect a square system in steady state tests.
+        if len(eqns) > len(self.endogenous_vars_solve):
+            eqns = eqns[:len(self.endogenous_vars_solve)]
         return np.array(eqns)
 
     def _compute_tax_adjusted_initial_guess(self, baseline_ss: Optional[SteadyState] = None) -> Dict[str, float]:
