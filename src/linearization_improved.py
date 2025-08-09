@@ -392,6 +392,7 @@ class ImprovedLinearizedDSGE:
         try:
             Zs_states_inv = linalg.inv(Zs_states)
         except linalg.LinAlgError:
+            logger.warning("Zs_states matrix is singular. Using pseudo-inverse. This may indicate issues with model specification.")
             Zs_states_inv = linalg.pinv(Zs_states)
         P = Zs_controls @ Zs_states_inv
         
