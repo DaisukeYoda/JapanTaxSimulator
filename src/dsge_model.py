@@ -335,7 +335,10 @@ class DSGEModel:
         """
         # Use new refactored implementation (inline for now to avoid import issues)
         computer = _SteadyStateComputer(self)
-        return computer.compute(initial_guess_dict, baseline_ss)
+        final_ss = computer.compute(initial_guess_dict, baseline_ss)
+        # Ensure model stores steady state for downstream modules/tests
+        self.steady_state = final_ss
+        return final_ss
     
     def _compute_steady_state_original(self, initial_guess_dict: Optional[Dict]=None, baseline_ss: Optional[SteadyState] = None) -> SteadyState:
         params=self.params;ss_defaults=SteadyState();ss_defaults.tau_l_effective=params.tau_l_ss

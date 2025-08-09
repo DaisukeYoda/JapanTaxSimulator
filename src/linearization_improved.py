@@ -48,22 +48,20 @@ class ImprovedLinearizedDSGE:
         self.steady_state = steady_state
         self.params = model.params
         
-        # Get model equations and extract variables
-        self.equations = model.get_model_equations()
-        self.variable_info = self._extract_variables_from_equations()
+        # Defer heavy setup until build_system_matrices() is called
+        self.equations = None
+        self.variable_info = None
         
-        # Define variable ordering based on the actual model
-        self.endo_vars = self.variable_info['endogenous']
-        self.exo_vars = self.variable_info['exogenous'] 
+        # Placeholders; will be populated lazily
+        self.endo_vars: List[str] = []
+        self.exo_vars: List[str] = []
+        self.state_vars: List[str] = []
+        self.control_vars: List[str] = []
         
-        # Classify variables as predetermined or jump variables
-        self.state_vars = self.variable_info['predetermined']
-        self.control_vars = self.variable_info['jump']
-        
-        self.n_endo = len(self.endo_vars)
-        self.n_exo = len(self.exo_vars)
-        self.n_state = len(self.state_vars)
-        self.n_control = len(self.control_vars)
+        self.n_endo = 0
+        self.n_exo = 0
+        self.n_state = 0
+        self.n_control = 0
         
         # For compatibility with tax_simulator.py
         self.n_s = self.n_state
@@ -153,6 +151,20 @@ class ImprovedLinearizedDSGE:
         """
         import sympy
         
+        # Lazily load equations and variable classifications
+        if self.equations is None:
+            self.equations = self.model.get_model_equations()
+        if self.variable_info is None:
+            self.variable_info = self._extract_variables_from_equations()
+            self.endo_vars = self.variable_info['endogenous']
+            self.exo_vars = self.variable_info['exogenous']
+            self.state_vars = self.variable_info['predetermined']
+            self.control_vars = self.variable_info['jump']
+            self.n_endo = len(self.endo_vars)
+            self.n_exo = len(self.exo_vars)
+            self.n_state = len(self.state_vars)
+            self.n_control = len(self.control_vars)
+        
         # Get steady state values
         ss_dict = self.steady_state.to_dict()
         
@@ -196,9 +208,10 @@ class ImprovedLinearizedDSGE:
                 elif var_name in ss_dict:
                     substitutions[symbol] = ss_dict[var_name]
                 else:
-                    # Try to find a reasonable default
-                    print(f"Warning: No steady state value for {var_name}, setting to 1.0")
-                    substitutions[symbol] = 1.0
+                    raise ValueError(
+                        f"Missing steady state value for '{var_name}' (mapped key '{ss_var}'). "
+                        f"Provide SS in model steady state; no defaults allowed for research integrity."
+                    )
         
         # Initialize coefficient matrices
         n_eq = len(self.equations)
@@ -259,149 +272,19 @@ class ImprovedLinearizedDSGE:
                         except Exception as e:
                             print(f"Warning: Failed to differentiate equation {eq_idx} w.r.t. {symbol}: {e}")
         
-        # Ensure square system: keep exactly n_endo equations
+        # Ensure square system: require exactly n_endo equations (no ad-hoc filtering)
         target_eq_count = A.shape[1]  # Number of variables
-        
         if A.shape[0] != target_eq_count:
-            print(f"Adjusting system to be square: {A.shape[0]} equations -> {target_eq_count} equations")
-            
-            # Identify forward-looking equations (non-zero rows in A matrix)
-            forward_eq_indices = []
-            for i in range(A.shape[0]):
-                if np.linalg.norm(A[i, :]) > 1e-12:
-                    forward_eq_indices.append(i)
-            
-            print(f"Forward-looking equations ({len(forward_eq_indices)}): {[i+1 for i in forward_eq_indices]}")
-            
-            if A.shape[0] > target_eq_count:
-                # Too many equations - need to remove some
-                print("System is overdetermined - removing equations while preserving structure...")
-                
-                # Define critical equations that must be kept (0-indexed)
-                # Identify these equations by their content rather than hardcoded indices
-                critical_equations = []
-                
-                # Look for production function (Y equation) and TFP process (A_tfp equation)
-                for eq_idx, equation in enumerate(self.equations):
-                    if eq_idx >= A.shape[0]:
-                        break
-                    expr_str = str(equation.lhs - equation.rhs)
-                    
-                    # Production function: Y = A_tfp * K^alpha * L^(1-alpha)
-                    if 'Y' in expr_str and 'A_tfp' in expr_str and 'K' in expr_str and 'L' in expr_str:
-                        critical_equations.append(eq_idx)
-                    # TFP process: log(A_tfp/A_tfp_ss) = rho_a * log(A_tfp_tm1/A_tfp_ss) + eps_a
-                    elif 'A_tfp' in expr_str and ('eps_a' in expr_str or 'log' in expr_str):
-                        critical_equations.append(eq_idx)
-                
-                print(f"Identified critical equations: {[i+1 for i in critical_equations]}")
-                
-                # Priority order: 1) Forward-looking, 2) Critical static, 3) Others by norm
-                keep_indices = forward_eq_indices.copy()
-                
-                # Add critical static equations
-                for eq_idx in critical_equations:
-                    if eq_idx < A.shape[0] and eq_idx not in keep_indices:
-                        keep_indices.append(eq_idx)
-                
-                # Calculate norms for remaining equations
-                remaining_indices = [i for i in range(A.shape[0]) if i not in keep_indices]
-                equation_norms = []
-                for i in remaining_indices:
-                    combined_norm = np.linalg.norm(A[i, :]) + np.linalg.norm(B[i, :])
-                    equation_norms.append((combined_norm, i))
-                
-                # Sort by norm (largest first)
-                equation_norms.sort(reverse=True)
-                
-                # Add remaining equations until we reach target count
-                needed_equations = target_eq_count - len(keep_indices)
-                for norm, eq_idx in equation_norms[:needed_equations]:
-                    keep_indices.append(eq_idx)
-                
-                keep_indices = np.sort(keep_indices)
-                print(f"Keeping {len(keep_indices)} equations: {keep_indices + 1}")
-                
-                A = A[keep_indices, :]
-                B = B[keep_indices, :]
-                C = C[keep_indices, :]
-                
-                # Fix TFP shock mapping: ensure eps_a affects A_tfp variable, not K
-                # This is necessary because equation filtering can misalign shock-variable associations
-                if 'eps_a' in self.exo_vars and 'A_tfp' in self.endo_vars and 'K' in self.endo_vars:
-                    eps_a_idx = self.exo_vars.index('eps_a')
-                    a_tfp_idx = self.endo_vars.index('A_tfp')
-                    k_idx = self.endo_vars.index('K')
-                    
-                    # Check if eps_a shock is misaligned
-                    eps_a_col = C[:, eps_a_idx]
-                    
-                    # Find where eps_a has non-zero entries
-                    non_zero_rows = np.where(np.abs(eps_a_col) > 1e-10)[0]
-                    
-                    # If eps_a affects K but not A_tfp, fix the mapping
-                    # Note: k_idx and a_tfp_idx bounds checks ensure they are valid row indices for C matrix
-                    if (k_idx in non_zero_rows and 
-                        a_tfp_idx not in non_zero_rows and 
-                        k_idx < C.shape[0] and 
-                        a_tfp_idx < C.shape[0]):
-                        
-                        logger.info(f"Fixing TFP shock mapping: moving eps_a from row {k_idx} (K) to row {a_tfp_idx} (A_tfp)")
-                        
-                        # Move the shock coefficient
-                        shock_coeff = C[k_idx, eps_a_idx]
-                        C[k_idx, eps_a_idx] = 0.0
-                        C[a_tfp_idx, eps_a_idx] = shock_coeff
-                
-            elif A.shape[0] < target_eq_count:
-                # System is underdetermined - this should rarely happen in a properly specified DSGE model
-                print("Warning: System is underdetermined - this may indicate missing model equations")
-                print("Consider adding missing behavioral or equilibrium conditions to the model")
-                
-                missing_equations = target_eq_count - A.shape[0]
-                print(f"Missing {missing_equations} equations for square system")
-                
-                # Instead of arbitrary identity equations, add minimal regularization
-                # that doesn't impose economic restrictions
-                A_extended = np.vstack([A, np.zeros((missing_equations, A.shape[1]))])
-                B_extended = np.vstack([B, np.zeros((missing_equations, B.shape[1]))])
-                C_extended = np.vstack([C, np.zeros((missing_equations, C.shape[1]))])
-                
-                # Add small diagonal entries only to prevent rank deficiency
-                # without imposing that deviations must be zero
-                added_row_start = A.shape[0]
-                for i in range(missing_equations):
-                    row_idx = added_row_start + i
-                    var_idx = row_idx  # Map to corresponding variable
-                    if var_idx < B_extended.shape[1]:
-                        # Add a very small coefficient instead of 1.0 to avoid imposing x_var = 0
-                        B_extended[row_idx, var_idx] = 1e-10
-                
-                A = A_extended
-                B = B_extended
-                C = C_extended
-                
-                print(f"Extended system shape: A{A.shape}, B{B.shape}, C{C.shape}")
-                print("Warning: Added minimal regularization - verify model specification")
+            raise ValueError(
+                f"Equation count mismatch: have {A.shape[0]} equations for {target_eq_count} variables. "
+                f"Adjust the model equations so the system is square; automatic filtering/regularization is disabled."
+            )
         
-        # Final verification and regularization if needed
-        if A.shape[0] == A.shape[1]:
-            A_rank = np.linalg.matrix_rank(A)
-            print(f"Square system achieved: {A.shape} with rank {A_rank}")
-            
-            if A_rank < A.shape[0]:
-                print(f"A matrix is still rank deficient ({A_rank}/{A.shape[0]})")
-                
-                # Model has limited forward-looking structure by design
-                # This is not an error - the model genuinely has only ~5 forward-looking relationships
-                print(f"Note: Model has limited forward-looking dynamics (rank {A_rank})")
-                print("This is expected for models with many static relationships")
-                
-                # Don't apply artificial regularization that distorts economics
-                # The Klein method may not be appropriate for this model structure
-        else:
-            print(f"Warning: Could not create square system: {A.shape}")
-            print("This indicates a fundamental issue with the model specification")
+        # Final verification
+        A_rank = np.linalg.matrix_rank(A)
+        print(f"Square system achieved: {A.shape} with rank {A_rank}")
+        if A_rank < A.shape[0]:
+            print(f"A matrix is rank deficient ({A_rank}/{A.shape[0]}). This may be acceptable if BK holds.")
         
         # Store the system 
         self.linear_system = LinearizedSystem(
@@ -458,96 +341,71 @@ class ImprovedLinearizedDSGE:
         print(f"A matrix rank: {np.linalg.matrix_rank(A)}")
         print(f"B matrix rank: {np.linalg.matrix_rank(B)}")
         
-        # Generalized Schur decomposition
-        try:
-            T, S, alpha, beta, Q_schur, Z = linalg.ordqz(A, B, sort='ouc')
-        except Exception as e:
-            print(f"Schur decomposition failed: {e}")
-            print("Attempting to solve with pseudo-inverse...")
-            
-            # Fall back to simpler solution method
-            try:
-                # Solve A*x_{t+1} = -B*x_t using generalized inverse
-                AinvB = linalg.pinv(A) @ (-B)
-                eigenvals, eigenvecs = linalg.eig(AinvB)
-                
-                # Separate stable and unstable eigenvalues
-                stable_mask = np.abs(eigenvals) < 1.0
-                n_stable = np.sum(stable_mask)
-                n_unstable = np.sum(~stable_mask)
-                
-                print(f"Number of stable eigenvalues: {n_stable}")
-                print(f"Number of unstable eigenvalues: {n_unstable}")
-                print(f"Number of predetermined variables: {self.n_state}")
-                print(f"Number of jump variables: {self.n_control}")
-                
-                # Simple solution for now - return identity matrices
-                P_full = np.zeros((self.n_control, self.n_state))
-                Q_full = np.eye(self.n_state) * 0.95  # Stable dynamics
-                
-                self.linear_system.P = P_full
-                self.linear_system.Q = Q_full
-                self.linear_system.R = np.zeros((self.n_state, self.n_exo))
-                
-                return P_full, Q_full
-                
-            except Exception as e2:
-                print(f"Fallback method also failed: {e2}")
-                raise
+        # Generalized Schur decomposition (no fallback allowed)
+        T, S, alpha, beta, Q_schur, Z = linalg.ordqz(A, B, sort='ouc')
         
         # Check Blanchard-Kahn conditions
         eigenvalues = alpha / beta
         finite_eigenvals = eigenvalues[np.isfinite(eigenvalues)]
         n_explosive = np.sum(np.abs(finite_eigenvals) > 1.0)
-        n_forward = len(self.variable_info['forward_looking'])
-        
+        n_jump = self.n_control
         print(f"Number of explosive eigenvalues: {n_explosive}")
-        print(f"Number of forward-looking variables: {n_forward}")
+        print(f"Number of jump variables: {n_jump}")
+        if n_explosive != n_jump:
+            raise ValueError(
+                f"Blanchard-Kahn conditions not satisfied (unstable roots={n_explosive}, jump vars={n_jump}). "
+                f"Adjust model specification to satisfy BK; no fallback permitted."
+            )
         
-        if n_explosive != n_forward:
-            print(f"Warning: Blanchard-Kahn conditions not satisfied.")
-            print(f"This may indicate model indeterminacy or non-existence of solution.")
+        # Recover solution using stable invariant subspace (Klein/Sims method)
+        n_vars = len(self.endo_vars)
+        k_unstable = n_explosive  # equals number of jump variables after BK
+        # Partition columns of Z into [unstable | stable]
+        Z_unstable = Z[:, :k_unstable]
+        Z_stable = Z[:, k_unstable:]
         
-        # Get number of predetermined variables
-        n_s = self.n_state
+        # Partition rows of Z according to variable types (states first, controls second)
+        # Build index maps from variable name ordering used in A/B (self.endo_vars)
+        var_to_idx = {v: i for i, v in enumerate(self.endo_vars)}
+        state_row_idx = [var_to_idx[v] for v in self.state_vars if v in var_to_idx]
+        control_row_idx = [var_to_idx[v] for v in self.control_vars if v in var_to_idx]
         
-        # Extract relevant blocks from Z matrix
-        if n_s < len(Z):
-            Z11 = Z[:n_s, :n_s]
-            Z12 = Z[:n_s, n_s:] if n_s < Z.shape[1] else np.zeros((n_s, 0))
-            Z21 = Z[n_s:, :n_s] if n_s < Z.shape[0] else np.zeros((0, n_s))
-            Z22 = Z[n_s:, n_s:] if n_s < min(Z.shape) else np.zeros((0, 0))
-        else:
-            # Handle case where all variables are predetermined
-            Z11 = Z
-            Z12 = np.zeros((n_s, 0))
-            Z21 = np.zeros((0, n_s))
-            Z22 = np.zeros((0, 0))
+        # Sanity checks
+        if len(state_row_idx) != self.n_state or len(control_row_idx) != self.n_control:
+            raise ValueError(
+                f"State/control index mismatch (states={len(state_row_idx)}/{self.n_state}, "
+                f"controls={len(control_row_idx)}/{self.n_control}). Ensure variable metadata is correct."
+            )
         
-        # Compute policy function
-        if Z22.size > 0:
-            try:
-                P = -linalg.solve(Z22, Z21)
-            except:
-                print("Warning: Could not solve for policy function, using pseudo-inverse")
-                P = -linalg.pinv(Z22) @ Z21
-        else:
-            P = np.zeros((0, n_s))
+        # Stable eigen-blocks of S and T (lower-right after ordering)
+        S_stable = S[k_unstable:, k_unstable:]
+        T_stable = T[k_unstable:, k_unstable:]
+        # Transition in stable coordinates: w_{t+1} = S_s^{-1} T_s w_t
+        G_stable = linalg.solve(S_stable, T_stable)
         
-        # Compute transition matrix for states
-        if Z12.size > 0:
-            Q_states = Z11 - Z12 @ P
-        else:
-            Q_states = Z11
+        # Z blocks for stable columns
+        Zs_states = Z_stable[state_row_idx, :]
+        Zs_controls = Z_stable[control_row_idx, :]
         
-        # Build solution matrices
+        # Policy function: controls = P * states
+        # P = Zs_controls @ inv(Zs_states)
+        try:
+            Zs_states_inv = linalg.inv(Zs_states)
+        except linalg.LinAlgError:
+            Zs_states_inv = linalg.pinv(Zs_states)
+        P = Zs_controls @ Zs_states_inv
+        
+        # State transition in original state coordinates:
+        # x_state,t = Zs_states w_s,t  => w_s,t = Zs_states^{-1} x_state,t
+        # x_state,t+1 = Zs_states w_s,t+1 = Zs_states G_stable Zs_states^{-1} x_state,t
+        Q_states = Zs_states @ G_stable @ Zs_states_inv
+        
+        # Build solution matrices with correct shapes
         P_full = np.zeros((self.n_control, self.n_state))
-        if P.size > 0:
-            P_full[:min(P.shape[0], self.n_control), :min(P.shape[1], self.n_state)] = P[:self.n_control, :self.n_state]
+        P_full[:, :] = P[:self.n_control, :self.n_state]
         
         Q_full = np.zeros((self.n_state, self.n_state))
-        if Q_states.size > 0:
-            Q_full[:min(Q_states.shape[0], self.n_state), :min(Q_states.shape[1], self.n_state)] = Q_states[:self.n_state, :self.n_state]
+        Q_full[:, :] = Q_states[:self.n_state, :self.n_state]
         
         # Add persistence for exogenous processes
         exo_indices = self._get_exogenous_state_indices()
@@ -563,6 +421,10 @@ class ImprovedLinearizedDSGE:
         self.linear_system.P = P_full
         self.linear_system.Q = Q_full
         self.linear_system.R = np.zeros((self.n_state, self.n_exo))
+        
+        # Also expose as attributes for downstream usage
+        self.P_matrix = P_full
+        self.Q_matrix = Q_full
         
         return P_full, Q_full
     

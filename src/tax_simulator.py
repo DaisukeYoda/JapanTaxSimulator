@@ -78,6 +78,19 @@ class EnhancedTaxSimulator:
         
         # Create new modular components
         self._setup_modular_components()
+
+        # Expose commonly expected attributes for backward-compat tests
+        # linear_model, P_matrix, Q_matrix
+        try:
+            self.linear_model = self.simulation_engine.linearization_manager.linear_model
+            # If Klein succeeded these may exist
+            if hasattr(self.linear_model, 'P_matrix'):
+                self.P_matrix = self.linear_model.P_matrix
+            if hasattr(self.linear_model, 'Q_matrix'):
+                self.Q_matrix = self.linear_model.Q_matrix
+        except Exception:
+            # Keep facade resilient
+            pass
         
         # Legacy attributes for backward compatibility
         self.baseline_params = baseline_model.params
@@ -103,7 +116,7 @@ class EnhancedTaxSimulator:
         
         linearization_config = LinearizationConfig(
             method=linearization_method,
-            fallback_to_simple=True
+            fallback_to_simple=(linearization_method != 'klein')
         )
         
         # Create simulation engine

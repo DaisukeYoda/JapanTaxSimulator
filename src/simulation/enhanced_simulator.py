@@ -44,7 +44,8 @@ class LinearizationConfig:
     tolerance: float = 1e-8
     max_iterations: int = 1000
     validate_bk_conditions: bool = True
-    fallback_to_simple: bool = True
+    # Research-mode default: no fallback when using Klein
+    fallback_to_simple: bool = False
 
 
 class LinearizationManager:
