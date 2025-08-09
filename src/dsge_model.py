@@ -672,7 +672,7 @@ class _SteadyStateComputer:
         ss_defaults.C = params.cy_ratio * ss_defaults.Y  # 0.6
         ss_defaults.I = params.iy_ratio * ss_defaults.Y  # 0.2
         ss_defaults.K = (params.ky_ratio / 4) * ss_defaults.Y  # Quarterly K/Y ratio
-        ss_defaults.L = params.hours_steady  # 0.33
+        ss_defaults.L = max(params.hours_steady, 0.1)  # ensure strictly positive labor share
         
         # Production function consistency check (lines 323-329) - FIXED: より適切なスケール
         # 生産関数 Y = K^α * L^(1-α) から適切なK, Lを計算 + 数値安定性考慮
@@ -694,7 +694,7 @@ class _SteadyStateComputer:
         ss_defaults.C = ss_defaults.Y - ss_defaults.I - ss_defaults.G
         
         # Labor market (lines 335-336)
-        if ss_defaults.L > 1e-9:
+        if ss_defaults.L > 1e-6:
             ss_defaults.w = (1-params.alpha) * ss_defaults.mc * ss_defaults.Y / ss_defaults.L
         else:
             ss_defaults.w = 2.0
@@ -788,7 +788,8 @@ class _SteadyStateComputer:
                 val = initial_guess_dict.get(var_name_solver, getattr(ss_defaults, var_name_solver))
             
             if var_name_solver in self.model.log_vars_indices:
-                val = np.log(val) if val > 1e-9 else np.log(1e-9)
+                # Prevent -inf by enforcing a minimal floor
+                val = np.log(max(val, 1e-6))
             x0_list.append(val)
         
         return np.array(x0_list)
